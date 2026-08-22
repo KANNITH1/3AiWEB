@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Forge AI - System</title>
+    <!-- ลิงก์ CSS ตรงนี้สำคัญมาก! -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow glow-1"></div><div class="glow glow-2"></div>
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+            <a href="index.html" class="nav-item active">👥 สมาชิกระบบ</a>
+            <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+            <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+            <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+            <button class="theme-btn" onclick="toggleTheme()">🌓 สลับธีม สว่าง/มืด</button>
+        </aside>
+
+        <main class="main-content">
+            <h1>Welcome to <span class="grad-text">Forge AI</span></h1>
+            <p style="color: var(--dim);">โปรเจกต์ระบบสร้างภาพด้วย AI ผ่านสถาปัตยกรรมแบบกระจายศูนย์</p>
+            
+            <div class="panel">
+                <h2>สถาปัตยกรรมระบบ (Distributed System)</h2>
+                <div style="margin-top: 20px; line-height: 1.8;">
+                    <p><strong>1. Frontend & Nginx (คุณ)</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.10</span></p><br>
+                    <p><strong>2. Backend API (Flask + SQLite)</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.20</span></p><br>
+                    <p><strong>3. AI Engine</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.30</span></p>
+                </div>
+                <br>
+                <a href="home.html" style="text-decoration: none;">
+                    <button class="btn-primary" style="width: auto;">เข้าสู่ระบบสร้างภาพ →</button>
+                </a>
+            </div>
+        </main>
+    </div>
+    <!-- ลิงก์ Script ตรงนี้สำคัญมาก! -->
+    <script src="script.js"></script>
+</body>
+</html>
