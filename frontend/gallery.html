@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Forge AI - Gallery</title>
+    <!-- ลิงก์ CSS ตรงนี้สำคัญมาก! -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow glow-1"></div><div class="glow glow-2"></div>
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+            <a href="index.html" class="nav-item">👥 สมาชิกระบบ</a>
+            <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+            <a href="gallery.html" class="nav-item active">🖼️ แกลเลอรี่</a>
+            <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+            <button class="theme-btn" onclick="toggleTheme()">🌓 สลับธีม สว่าง/มืด</button>
+        </aside>
+
+        <main class="main-content">
+            <h1><span class="grad-text">Gallery</span> ของคุณ</h1>
+            <p style="color: var(--dim);">ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้ในเบราว์เซอร์</p>
+            
+            <div class="panel">
+                <div id="gallery-grid" class="gallery-grid">
+                    <!-- JS จะดึงภาพมาใส่ตรงนี้อัตโนมัติ -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- ลิงก์ Script ตรงนี้สำคัญมาก! -->
+    <script src="script.js"></script>
+</body>
+</html>

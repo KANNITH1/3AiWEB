@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Forge AI - Create</title>
+    <!-- ลิงก์ CSS ตรงนี้สำคัญมาก! -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow glow-1"></div><div class="glow glow-2"></div>
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+            <a href="index.html" class="nav-item">👥 สมาชิกระบบ</a>
+            <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
+            <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+            <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+            <button class="theme-btn" onclick="toggleTheme()">🌓 สลับธีม สว่าง/มืด</button>
+        </aside>
+
+        <main class="main-content">
+            <h1>AI Image <span class="grad-text">Engine</span></h1>
+            
+            <div class="panel">
+                <form id="generate-form">
+                    <label style="font-weight: 600;">Prompt ของคุณ</label>
+                    <textarea id="prompt" class="input-field" rows="3" placeholder="พิมพ์สิ่งที่คุณจินตนาการ..." required></textarea>
+                    
+                    <label style="font-weight: 600; display: block; margin-top: 20px;">เลือกสไตล์ภาพ</label>
+                    <div class="style-grid">
+                        <div class="chip active" data-style="realistic">Realistic</div>
+                        <div class="chip" data-style="anime">Anime</div>
+                        <div class="chip" data-style="cyberpunk">Cyberpunk</div>
+                        <div class="chip" data-style="oil-painting">Oil Painting</div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <span class="spinner"></span>
+                        <span class="btn-text">สร้างภาพ</span>
+                    </button>
+                </form>
+                
+                <div id="result-wrapper" class="image-result-wrapper">
+                    <img id="result-image" class="generated-image" src="" alt="Result">
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- ลิงก์ Script ตรงนี้สำคัญมาก! -->
+    <script src="script.js"></script>
+</body>
+</html>
