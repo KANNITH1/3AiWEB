@@ -216,3 +216,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- AI Model files (เพิ่มเองสำหรับ AI Server) ---
+# ห้าม push ไฟล์โมเดลขึ้น git เด็ดขาด (ขนาดใหญ่หลาย GB, ทำให้ repo พัง)
+*.safetensors
+*.ckpt
+*.pt
+*.bin
+*.gguf
+*.onnx
+models/
+checkpoints/
+ 
+# ภาพที่ generate ระหว่างทดสอบ ไม่ต้อง track
+outputs/
+generated/
+ 
