@@ -1,52 +1,103 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <title>Forge AI - Create</title>
-    <!-- ลิงก์ CSS ตรงนี้สำคัญมาก! -->
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="glow glow-1"></div><div class="glow glow-2"></div>
-    <div class="layout">
-        <aside class="sidebar">
-            <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-            <a href="index.html" class="nav-item">👥 สมาชิกระบบ</a>
-            <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
-            <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-            <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-            <button class="theme-btn" onclick="toggleTheme()">🌓 สลับธีม สว่าง/มืด</button>
-        </aside>
 
-        <main class="main-content">
-            <h1>AI Image <span class="grad-text">Engine</span></h1>
-            
-            <div class="panel">
-                <form id="generate-form">
-                    <label style="font-weight: 600;">Prompt ของคุณ</label>
-                    <textarea id="prompt" class="input-field" rows="3" placeholder="พิมพ์สิ่งที่คุณจินตนาการ..." required></textarea>
-                    
-                    <label style="font-weight: 600; display: block; margin-top: 20px;">เลือกสไตล์ภาพ</label>
-                    <div class="style-grid">
-                        <div class="chip active" data-style="realistic">Realistic</div>
-                        <div class="chip" data-style="anime">Anime</div>
-                        <div class="chip" data-style="cyberpunk">Cyberpunk</div>
-                        <div class="chip" data-style="oil-painting">Oil Painting</div>
-                    </div>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
 
-                    <button type="submit" class="btn-primary">
-                        <span class="spinner"></span>
-                        <span class="btn-text">สร้างภาพ</span>
-                    </button>
-                </form>
-                
-                <div id="result-wrapper" class="image-result-wrapper">
-                    <img id="result-image" class="generated-image" src="" alt="Result">
-                </div>
+  <div class="layout">
+
+    <aside class="sidebar">
+      <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <nav>
+        <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
+        <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
+        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+      </nav>
+      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
+    </aside>
+
+    <main class="main-content">
+      <span class="eyebrow">AI IMAGE ENGINE</span>
+      <h1>AI Image <span class="grad-text">Engine</span></h1>
+      <p class="subtitle">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
+
+      <section class="panel">
+
+        <div class="mode-tabs" id="mode-tabs">
+          <button type="button" class="mode-tab active" data-mode="text2img">✍️ Text to Image</button>
+          <button type="button" class="mode-tab" data-mode="img2img">🖌️ Image to Image</button>
+          <button type="button" class="mode-tab" data-mode="upscale">🔍 Upscale</button>
+        </div>
+
+        <form id="generate-form">
+
+          <div id="upload-group" class="field-group hidden">
+            <label for="source-image">อัปโหลดภาพต้นฉบับ</label>
+            <div class="upload-box" id="upload-box">
+              <input type="file" id="source-image" accept="image/*" hidden>
+              <div id="upload-placeholder">
+                <span class="upload-icon">📤</span>
+                <span>คลิกเพื่อเลือกภาพ หรือลากมาวางตรงนี้</span>
+              </div>
+              <img id="upload-preview" alt="ภาพที่อัปโหลด">
             </div>
-        </main>
-    </div>
-    <!-- ลิงก์ Script ตรงนี้สำคัญมาก! -->
-    <script src="script.js"></script>
+          </div>
+
+          <div id="prompt-group" class="field-group">
+            <label for="prompt">Prompt</label>
+            <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
+          </div>
+
+          <div id="strength-group" class="field-group hidden">
+            <label for="strength">ระดับการปรับแก้ (Strength): <span id="strength-value">50%</span></label>
+            <input type="range" id="strength" min="10" max="100" value="50">
+          </div>
+
+          <div id="scale-group" class="field-group hidden">
+            <label>ขยายภาพกี่เท่า</label>
+            <div class="style-grid">
+              <button type="button" class="chip active" data-scale="2">2x</button>
+              <button type="button" class="chip" data-scale="4">4x</button>
+            </div>
+          </div>
+
+          <div id="style-group" class="field-group">
+            <label>เลือกสไตล์ภาพ</label>
+            <div class="style-grid" id="style-grid">
+              <button type="button" class="chip active" data-style="realistic">Realistic</button>
+              <button type="button" class="chip" data-style="anime">Anime</button>
+              <button type="button" class="chip" data-style="cyberpunk">Cyberpunk</button>
+              <button type="button" class="chip" data-style="oil-painting">Oil Painting</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-btn">
+            <span class="btn-text">สร้างภาพ</span>
+            <span class="spinner"></span>
+          </button>
+        </form>
+
+        <div class="image-result-wrapper" id="result">
+          <img class="generated-image" id="result-image" src="" alt="ผลลัพธ์ภาพ AI">
+          <div class="result-actions">
+            <button class="btn-secondary" id="save-btn" type="button">💾 บันทึกลง Gallery</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>

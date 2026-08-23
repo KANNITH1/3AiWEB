@@ -4,40 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About — Forge AI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <div class="glow-orb glow-orb-1"></div>
-  <div class="glow-orb glow-orb-2"></div>
-
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
   <div class="layout">
-
     <aside class="sidebar">
       <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <nav class="side-nav">
-        <a href="home.html" class="nav-item"><span class="nav-icon">🏠</span> Home</a>
-        <a href="gallery.html" class="nav-item"><span class="nav-icon">🖼️</span> Gallery</a>
-        <a href="history.html" class="nav-item"><span class="nav-icon">🕓</span> History</a>
-        <a href="about.html" class="nav-item active"><span class="nav-icon">ℹ️</span> About</a>
+      <nav>
+        <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
+        <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+        <a href="about.html" class="nav-item active">ℹ️ เกี่ยวกับ</a>
       </nav>
       <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
     </aside>
-
     <main class="main-content">
-      <div class="container">
-        <h2 class="section-title">About Forge AI</h2>
-        <p class="about-text">
-          Forge AI คือระบบ Distributed System ที่ประกอบด้วย Frontend, Backend (Flask),
-          AI Server และ Database ทำงานร่วมกันผ่าน Nginx Reverse Proxy
-          เพื่อสร้างภาพจาก prompt ข้อความด้วยพลัง AI
-        </p>
-      </div>
+      <h2 class="section-title">About Forge AI</h2>
+      <p class="about-text">
+        Forge AI คือระบบ Distributed System ที่ประกอบด้วย Frontend, Backend (Flask),
+        AI Server และ Database ทำงานร่วมกันผ่าน Nginx Reverse Proxy
+        เพื่อสร้างภาพจาก prompt ข้อความด้วยพลัง AI
+      </p>
     </main>
   </div>
-
+  <div class="toast-container" id="toast-container"></div>
   <script src="script.js"></script>
 </body>
 </html>
