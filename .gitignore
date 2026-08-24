@@ -232,3 +232,7 @@ checkpoints/
 outputs/
 generated/
  
+ # Python Virtual Environments
+venv/
+.venv/
+**/venv/
