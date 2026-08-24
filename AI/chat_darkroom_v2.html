@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darkroom — AI Chat + Image</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f7f4;
+    --surface: #ffffff;
+    --line: #e5e7e0;
+    --ink: #23261f;
+    --muted: #767b6f;
+    --teal: #3d6b5e;
+    --teal-deep: #2e5147;
+    --amber: #e0a23a;
+    --font: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 620px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(30,30,20,0.03), 0 12px 32px rgba(30,30,20,0.05);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+    max-height: 780px;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, var(--teal), var(--teal-deep));
+    flex-shrink: 0;
+    position: relative;
+  }
+  .logo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.14);
+  }
+  .head-text { flex: 1; min-width: 0; }
+  h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .subtitle { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 10px 5px 8px;
+    flex-shrink: 0;
+  }
+  .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #7fa88f; }
+  .status-pill.busy .dot { background: var(--amber); animation: pulse 1.1s ease-in-out infinite; }
+  .status-pill.busy { color: var(--amber); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ── Chat ── */
+  #chatBox {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  #chatBox::-webkit-scrollbar { width: 5px; }
+  #chatBox::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  #chatBox::-webkit-scrollbar-track { background: transparent; }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    max-width: 260px;
+    line-height: 1.6;
+  }
+  .empty-state strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
+
+  .msg-row { display: flex; animation: rise 0.22s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-row.user { justify-content: flex-end; }
+
+  .bubble {
+    max-width: 80%;
+    padding: 12px 15px;
+    border-radius: 16px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    font-size: 14.5px;
+  }
+  .user .bubble {
+    background: var(--teal);
+    color: #fff;
+    border-bottom-right-radius: 5px;
+  }
+  .assistant .bubble {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-bottom-left-radius: 5px;
+  }
+
+  /* ── Typing indicator ── */
+  .typing-bubble { display: flex; align-items: center; gap: 4px; padding: 15px 16px; }
+  .typing-bubble .tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bounce 1.2s infinite ease-in-out; }
+  .typing-bubble .tdot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-bubble .tdot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  /* ── Image result ── */
+  .img-card {
+    max-width: 80%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    border-bottom-left-radius: 5px;
+    padding: 8px;
+  }
+  .img-card img {
+    width: 100%;
+    display: block;
+    border-radius: 11px;
+    animation: fadeUp 0.5s ease-out;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .img-caption { font-size: 11.5px; color: var(--muted); padding: 8px 6px 4px; }
+
+  .action-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--amber);
+    margin-bottom: 8px;
+  }
+  .action-tag .spinner {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(224,162,58,0.3);
+    border-top-color: var(--amber);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Input ── */
+  .input-panel {
+    flex-shrink: 0;
+    padding: 14px 18px 18px;
+    border-top: 1px solid var(--line);
+  }
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 5px 5px 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-row:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(61,107,94,0.1); }
+
+  input[type="text"] {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 14.5px;
+    padding: 9px 0;
+    outline: none;
+  }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  button#sendBtn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+  }
+  button#sendBtn svg { width: 16px; height: 16px; }
+  button#sendBtn:hover:not(:disabled) { background: var(--teal-deep); }
+  button#sendBtn:active:not(:disabled) { transform: scale(0.94); }
+  button#sendBtn:disabled { background: var(--line); cursor: not-allowed; }
+
+  .foot-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+  }
+  .reset-link {
+    font-size: 11.5px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+  }
+  .reset-link:hover { color: var(--teal-deep); text-decoration-color: var(--teal); }
+
+  @media (max-width: 480px) {
+    body { padding: 0; }
+    .app { border-radius: 0; height: 100vh; max-height: none; border: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <header>
+      <div class="logo"></div>
+      <div class="head-text">
+        <h1>Darkroom</h1>
+        <div class="subtitle">แชท + สร้างภาพด้วย AI</div>
+      </div>
+      <div class="status-pill" id="statusPill">
+        <div class="dot"></div>
+        <span id="statusText">พร้อมคุย</span>
+      </div>
+    </header>
+
+    <div id="chatBox">
+      <div class="empty-state" id="emptyState">
+        <strong>เริ่มคุยกันเลย</strong>
+        พิมพ์คำถาม หรือขอให้สร้างภาพ เช่น "ขอรูปหมาสีดำ"
+      </div>
+    </div>
+
+    <div class="input-panel">
+      <div class="input-row">
+        <input id="userInput" type="text" placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button id="sendBtn" onclick="sendMessage()" aria-label="ส่งข้อความ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>
+        </button>
+      </div>
+      <div class="foot-row">
+        <button class="reset-link" onclick="resetChat()">ล้างประวัติแชท</button>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+const API_URL = "http://localhost:5002";
+const sessionId = "user_" + Math.random().toString(36).substring(7);
+
+const chatBox = document.getElementById('chatBox');
+const emptyState = document.getElementById('emptyState');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const statusPill = document.getElementById('statusPill');
+const statusText = document.getElementById('statusText');
+
+function clearEmptyState() {
+  if (emptyState && emptyState.parentNode) emptyState.remove();
+}
+
+function setBadge(state) {
+  statusPill.className = 'status-pill' + (state === 'busy' ? ' busy' : '');
+  statusText.textContent = state === 'busy' ? 'กำลังตอบ...' : 'พร้อมคุย';
+}
+
+function addTextBubble(role, text) {
+  clearEmptyState();
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  chatBox.appendChild(row);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  return { row, bubble };
+}
+
+function addTypingIndicator() {
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble typing-bubble';
+  bubble.innerHTML = '<div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>';
+  row.appendChild(bubble);
+  chatBox.appendChild(row);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  return { row, bubble };
+}
+
+function addImageBubble(base64, promptUsed) {
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  const card = document.createElement('div');
+  card.className = 'img-card';
+  const img = document.createElement('img');
+  img.src = 'data:image/png;base64,' + base64;
+  card.appendChild(img);
+  if (promptUsed) {
+    const caption = document.createElement('div');
+    caption.className = 'img-caption';
+    caption.textContent = promptUsed;
+    card.appendChild(caption);
+  }
+  row.appendChild(card);
+  chatBox.appendChild(row);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+  const message = userInput.value.trim();
+  if (!message) return;
+
+  addTextBubble('user', message);
+  userInput.value = '';
+  sendBtn.disabled = true;
+  setBadge('busy');
+
+  const { row: typingRow } = addTypingIndicator();
+  const minTypingTime = new Promise(resolve => setTimeout(resolve, 500));
+
+  try {
+    const fetchPromise = fetch(API_URL + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: message, session_id: sessionId })
+    });
+
+    const [response] = await Promise.all([fetchPromise, minTypingTime]);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+
+    typingRow.remove();
+    const { bubble } = addTextBubble('assistant', data.reply);
+
+    if (data.action === 'generate_image') {
+      const tagEl = document.createElement('div');
+      tagEl.className = 'action-tag';
+      tagEl.innerHTML = '<span class="spinner"></span> กำลังสร้างภาพ';
+      bubble.prepend(tagEl);
+    }
+
+    if (data.image) {
+      addImageBubble(data.image, data.image_prompt_used || '');
+    }
+
+    setBadge('idle');
+
+  } catch (err) {
+    typingRow.remove();
+    addTextBubble('assistant', 'เชื่อมต่อ backend ไม่ได้: ' + err.message);
+    setBadge('idle');
+  } finally {
+    sendBtn.disabled = false;
+    userInput.focus();
+  }
+}
+
+async function resetChat() {
+  await fetch(API_URL + '/chat/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId })
+  });
+  chatBox.innerHTML = '';
+  chatBox.appendChild(emptyState);
+}
+</script>
+</body>
+</html>
