@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Forge AI - System</title>
-    <!-- ลิงก์ CSS ตรงนี้สำคัญมาก! -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,7 +15,12 @@
             <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
             <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
             <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-            <button class="theme-btn" onclick="toggleTheme()">🌓 สลับธีม สว่าง/มืด</button>
+            <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+            <div class="backend-status">
+              <span class="status-dot" id="backend-dot"></span>
+              <span id="backend-text">Checking...</span>
+            </div>
+            <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
         </aside>
 
         <main class="main-content">
@@ -36,7 +41,13 @@
             </div>
         </main>
     </div>
-    <!-- ลิงก์ Script ตรงนี้สำคัญมาก! -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+
+<script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
+

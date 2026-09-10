@@ -30,6 +30,22 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 
+/* Accessibility: Focus States */
+*:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ---------- background glow (subtle) ---------- */
 .glow {
   position: fixed;
@@ -103,6 +119,21 @@ body {
   line-height: 1.5;
   padding: 0 14px;
 }
+
+/* Backend Status Indicator */
+.backend-status {
+  padding: 0 14px;
+  font-size: 0.75rem;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.status-dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.status-dot.offline { background: #ef4444; }
+.status-dot.demo { background: var(--orange); }
 
 .theme-btn {
   margin-top: 12px;
@@ -328,7 +359,7 @@ input[type="range"] { width: 100%; accent-color: var(--cyan); }
 
 /* ---------- result image ---------- */
 .image-result-wrapper { display: none; margin-top: 24px; text-align: center; animation: fadeUp 0.4s ease; }
-.generated-image { max-width: 100%; border-radius: 14px; border: 1px solid var(--border); }
+.generated-image { max-width: 100%; border-radius: 14px; border: 1px solid var(--border); background-color: var(--border); }
 .result-actions { margin-top: 12px; }
 
 .btn-secondary {
@@ -352,17 +383,42 @@ input[type="range"] { width: 100%; accent-color: var(--cyan); }
   border-radius: 14px;
   overflow: hidden;
   transition: 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 .gallery-card:hover { transform: translateY(-3px); border-color: var(--cyan); }
-.gallery-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-.gallery-card p {
+.gallery-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background-color: var(--border); }
+
+/* Gallery Card Actions */
+.card-content {
   padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.card-content p {
+  padding: 0;
+  flex: 1;
   font-size: 0.78rem;
   color: var(--dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.card-actions { display: flex; gap: 6px; }
+.card-actions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: 0.2s;
+  padding: 2px;
+}
+.card-actions button:hover { opacity: 1; transform: scale(1.1); }
+.card-actions button.danger:hover { color: #ef4444; }
 
 /* ---------- history ---------- */
 .history-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
@@ -373,10 +429,30 @@ input[type="range"] { width: 100%; accent-color: var(--cyan); }
   background: var(--panel);
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   font-size: 0.88rem;
 }
+.h-info { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow: hidden; }
+.h-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .history-item .h-tag { color: var(--cyan); font-size: 0.75rem; white-space: nowrap; }
+
+/* History Actions */
+.h-actions { display: flex; gap: 8px; }
+.btn-icon {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text);
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover { border-color: var(--cyan); }
+.btn-icon.danger:hover { border-color: #ef4444; }
 
 /* ---------- about ---------- */
 .about-text { max-width: 600px; color: var(--dim); line-height: 1.7; margin-top: 6px; }
@@ -392,6 +468,70 @@ input[type="range"] { width: 100%; accent-color: var(--cyan); }
   grid-column: 1 / -1;
 }
 
+/* ==================================================
+   CHAT PANEL (ใหม่ — ใช้ในโหมด Chat หน้า Home)
+   ================================================== */
+.chat-panel { display: flex; flex-direction: column; height: 420px; }
+.chat-panel.hidden { display: none; }
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 4px 16px;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 11px 15px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(90deg, var(--orange), var(--cyan));
+  color: #0a0d16;
+  font-weight: 500;
+}
+
+.chat-bubble.typing { color: var(--dim); font-style: italic; }
+
+.chat-use-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  border-radius: 999px;
+  border: 1px solid var(--cyan);
+  background: transparent;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.chat-use-btn:hover { background: var(--cyan); color: #0a0d16; }
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.chat-input-row .input-field { flex: 1; margin: 0; }
+
+.chat-send-btn { width: auto; padding: 12px 22px; flex-shrink: 0; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 768px) {
   .layout { flex-direction: column; }
@@ -406,13 +546,9 @@ input[type="range"] { width: 100%; accent-color: var(--cyan); }
     overflow-x: auto;
   }
   .logo { margin-bottom: 0; white-space: nowrap; }
-  .sidebar nav {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-  }
+  .sidebar nav { display: flex; gap: 4px; overflow-x: auto; }
   .nav-item { white-space: nowrap; padding: 8px 12px; font-size: 0.82rem; }
-  .sidebar-footer { display: none; }
-  .theme-btn { display: none; }
+  .sidebar-footer, .theme-btn, .backend-status { display: none; }
   .main-content { padding: 28px 20px; }
+  .chat-panel { height: 360px; }
 }
