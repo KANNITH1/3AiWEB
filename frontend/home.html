@@ -3,123 +3,253 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home — Forge AI</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+  <title>Forge AI - Engine</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .mode-tab-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .mode-tab-btn:hover {
+      color: var(--text);
+    }
+    .mode-tab-btn.active {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--cyan);
+    }
+    .mode-content {
+      display: none;
+    }
+    .mode-content.active {
+      display: block;
+    }
+    .chat-box {
+      height: 280px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: var(--cyan);
+      color: #000;
+      font-weight: 500;
+    }
+    .chat-msg.bot {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .file-drop-area {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      color: var(--dim);
+      cursor: pointer;
+      transition: 0.3s;
+      background: rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .file-drop-area:hover {
+      border-color: var(--cyan);
+      color: var(--text);
+      background: rgba(0, 240, 255, 0.03);
+    }
+    .file-preview {
+      display: none;
+      max-width: 150px;
+      max-height: 150px;
+      border-radius: 8px;
+      border: 1px solid var(--cyan);
+      object-fit: cover;
+    }
+    .use-prompt-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: rgba(0, 240, 255, 0.2);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .use-prompt-btn:hover {
+      background: var(--cyan);
+      color: #000;
+    }
+    .action-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .action-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .action-btn:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+  </style>
 </head>
 <body>
-
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
-
   <div class="layout">
-
     <aside class="sidebar">
-      <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <nav>
-        <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
-        <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
-        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      </nav>
-      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
-      <div class="backend-status">
-        <span class="status-dot" id="backend-dot"></span>
-        <span id="backend-text">Checking...</span>
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
+      <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
+      <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+      <a href="history.html" class="nav-item">🕓 ประวัติ</a>
+      <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
+        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
       </div>
-      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
+      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
     </aside>
 
     <main class="main-content">
-      <span class="eyebrow">AI IMAGE ENGINE</span>
+      <p style="color:var(--dim); text-transform:uppercase; font-size:0.8rem; letter-spacing:1px;">AI IMAGE ENGINE</p>
       <h1>AI Image <span class="grad-text">Engine</span></h1>
-      <p class="subtitle">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
+      <p style="color:var(--dim); margin-bottom:25px;">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
 
-      <section class="panel">
-
-        <div class="mode-tabs" id="mode-tabs">
-          <button type="button" class="mode-tab" data-mode="chat">💬 Chat</button>
-          <button type="button" class="mode-tab active" data-mode="text2img">✍️ Text to Image</button>
-          <button type="button" class="mode-tab" data-mode="img2img">🖌️ Image to Image</button>
-          <button type="button" class="mode-tab" data-mode="upscale">🔍 Upscale</button>
+      <div class="panel">
+        <!-- เมนูเลือกโหมด -->
+        <div style="display:flex; gap:8px; background:rgba(0,0,0,0.2); padding:6px; border-radius:10px; margin-bottom:25px; width:fit-content; border:1px solid var(--border);">
+          <button type="button" class="mode-tab-btn" onclick="switchMode('chat')">💬 Chat</button>
+          <button type="button" class="mode-tab-btn active" onclick="switchMode('txt2img')">🎨 Text to Image</button>
+          <button type="button" class="mode-tab-btn" onclick="switchMode('img2img')">🪄 Image to Image</button>
+          <button type="button" class="mode-tab-btn" onclick="switchMode('upscale')">🔍 Upscale</button>
         </div>
 
-        <!-- ===== CHAT MODE ===== -->
-        <div id="chat-panel" class="chat-panel hidden">
-          <div class="chat-messages" id="chat-messages">
-            <div class="chat-bubble assistant">
-              สวัสดีครับ ผมช่วยคิด prompt สำหรับสร้างภาพได้ ลองบอกไอเดียคร่าวๆ มาได้เลย เช่น "แมวอวกาศ" หรือ "เมืองไซเบอร์พังก์ตอนกลางคืน"
-            </div>
+        <!-- 1. โหมด Chat -->
+        <div id="mode-chat" class="mode-content">
+          <div class="chat-box" id="chat-history">
+            <div class="chat-msg bot">สวัสดีครับ! ผมคือ AI Assistant คุณสามารถพิมพ์คุยเพื่อขอไอเดีย แล้วกดส่งไปสร้างภาพได้ทันทีครับ</div>
           </div>
-          <form id="chat-form" class="chat-input-row">
-            <input type="text" id="chat-input" class="input-field" placeholder="พิมพ์ไอเดียของคุณ..." autocomplete="off">
-            <button type="submit" class="btn-primary chat-send-btn">
-              <span class="btn-text">ส่ง</span>
+          <form id="chat-form" style="display:flex; gap:10px;">
+            <input type="text" id="chat-input" class="input-field" style="margin:0;" placeholder="พิมพ์คุยกับ AI เพื่อขอ Prompt..." required autocomplete="off">
+            <button type="submit" class="btn-primary" style="width:auto; padding:0 25px;">ส่ง</button>
+          </form>
+        </div>
+
+        <!-- 2. โหมด Text to Image -->
+        <div id="mode-txt2img" class="mode-content active">
+          <form id="generate-form">
+            <label style="font-weight:600;">Prompt คำสั่ง</label>
+            <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street" required></textarea>
+            
+            <label style="font-weight:600; display:block; margin-top:15px;">เลือกสไตล์ภาพ</label>
+            <div class="style-grid">
+              <div class="chip active" data-style="realistic">Realistic</div>
+              <div class="chip" data-style="anime">Anime</div>
+              <div class="chip" data-style="cyberpunk">Cyberpunk</div>
+              <div class="chip" data-style="oil-painting">Oil Painting</div>
+            </div>
+            <button type="submit" class="btn-primary" id="btn-txt2img">
               <span class="spinner"></span>
+              <span class="btn-text">สร้างภาพ</span>
             </button>
           </form>
         </div>
 
-        <!-- ===== GENERATE MODES ===== -->
-        <form id="generate-form">
-
-          <div id="upload-group" class="field-group hidden">
-            <label for="source-image">อัปโหลดภาพต้นฉบับ</label>
-            <div class="upload-box" id="upload-box">
-              <input type="file" id="source-image" accept="image/*" hidden>
-              <div id="upload-placeholder">
-                <span class="upload-icon">📤</span>
-                <span>คลิกเพื่อเลือกภาพ หรือลากมาวางตรงนี้</span>
-              </div>
-              <img id="upload-preview" alt="ภาพที่อัปโหลด">
+        <!-- 3. โหมด Image to Image -->
+        <div id="mode-img2img" class="mode-content">
+          <form id="img2img-form">
+            <label style="font-weight:600;">อัปโหลดรูปต้นฉบับ</label>
+            <div class="file-drop-area" onclick="document.getElementById('img2img-file').click()">
+              <img id="img2img-preview" class="file-preview" alt="Preview">
+              <span id="img2img-filename">📁 คลิกเพื่อเลือกไฟล์รูปภาพ (PNG, JPG)</span>
+              <input type="file" id="img2img-file" accept="image/*" style="display:none;">
             </div>
-          </div>
 
-          <div id="prompt-group" class="field-group">
-            <label for="prompt">Prompt</label>
-            <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
-          </div>
+            <label style="font-weight:600; display:block; margin-top:15px;">Prompt ที่ต้องการแปลงภาพ</label>
+            <textarea id="img2img-prompt" class="input-field" rows="2" placeholder="เช่น make it cyborg style, glowing armor" required></textarea>
 
-          <div id="strength-group" class="field-group hidden">
-            <label for="strength">ระดับการปรับแก้ (Strength): <span id="strength-value">50%</span></label>
-            <input type="range" id="strength" min="10" max="100" value="50">
-          </div>
+            <button type="submit" class="btn-primary" id="btn-img2img" style="margin-top:20px;">
+              <span class="spinner"></span>
+              <span class="btn-text">แปลงภาพ (Image to Image)</span>
+            </button>
+          </form>
+        </div>
 
-          <div id="scale-group" class="field-group hidden">
-            <label>ขยายภาพกี่เท่า</label>
+        <!-- 4. โหมด Upscale -->
+        <div id="mode-upscale" class="mode-content">
+          <form id="upscale-form">
+            <label style="font-weight:600;">อัปโหลดรูปภาพที่ต้องการขยายความคมชัด</label>
+            <div class="file-drop-area" onclick="document.getElementById('upscale-file').click()">
+              <img id="upscale-preview" class="file-preview" alt="Preview">
+              <span id="upscale-filename">📁 คลิกเพื่อเลือกไฟล์รูปภาพ</span>
+              <input type="file" id="upscale-file" accept="image/*" style="display:none;">
+            </div>
+
+            <label style="font-weight:600; display:block; margin-top:15px;">ระดับการขยายความละเอียด (Scale Factor)</label>
             <div class="style-grid">
-              <button type="button" class="chip active" data-scale="2">2x</button>
-              <button type="button" class="chip" data-scale="4">4x</button>
+              <div class="chip active" data-scale="2x">2x Upscale</div>
+              <div class="chip" data-scale="4x">4x Ultra HD</div>
             </div>
-          </div>
 
-          <div id="style-group" class="field-group">
-            <label>เลือกสไตล์ภาพ</label>
-            <div class="style-grid" id="style-grid">
-              <button type="button" class="chip active" data-style="realistic">Realistic</button>
-              <button type="button" class="chip" data-style="anime">Anime</button>
-              <button type="button" class="chip" data-style="cyberpunk">Cyberpunk</button>
-              <button type="button" class="chip" data-style="oil-painting">Oil Painting</button>
-            </div>
-          </div>
+            <button type="submit" class="btn-primary" id="btn-upscale">
+              <span class="spinner"></span>
+              <span class="btn-text">ขยายขนาดภาพ (Upscale)</span>
+            </button>
+          </form>
+        </div>
 
-          <button type="submit" class="btn-primary" id="submit-btn">
-            <span class="btn-text">สร้างภาพ</span>
-            <span class="spinner"></span>
-          </button>
-        </form>
-
-        <div class="image-result-wrapper" id="result">
-          <img class="generated-image" id="result-image" src="" alt="ผลลัพธ์ภาพ AI">
-          <div class="result-actions">
-            <button class="btn-secondary" id="save-btn" type="button">💾 บันทึกลง Gallery</button>
+        <!-- ผลลัพธ์ภาพ (ไม่มีไอคอนรูปแตกอีกต่อไป) -->
+        <div id="result-wrapper" class="image-result-wrapper">
+          <div style="font-weight:600; margin-bottom:10px; color:var(--cyan);">✨ ผลลัพธ์ที่ประมวลผลเสร็จสิ้น:</div>
+          <img id="result-image" class="generated-image" alt="AI Generated Output">
+          <div class="action-bar">
+            <a id="download-btn" class="action-btn" download="forge-ai-output.png">⬇️ ดาวน์โหลดรูป</a>
+            <button type="button" class="action-btn" onclick="openFullscreen()">🔍 ดูภาพขนาดเต็ม</button>
           </div>
         </div>
-      </section>
+
+      </div>
     </main>
   </div>
 
-  <div class="toast-container" id="toast-container"></div>
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>

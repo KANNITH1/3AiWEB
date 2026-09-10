@@ -9,7 +9,8 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
 <body>
-  <div class="glow glow-1"></div><div class="glow glow-2"></div>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
   <div class="layout">
     <aside class="sidebar">
       <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
@@ -18,19 +19,14 @@
       <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
       <a href="history.html" class="nav-item">🕓 ประวัติ</a>
       <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      
-      <!-- ตัวบ่งชี้สถานะ Backend -->
-      <div id="backend-status-indicator" style="margin-top:auto; font-size: 0.85rem; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.2);">
+      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
         <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
       </div>
-      <button class="theme-btn" onclick="toggleTheme()" style="margin-top: 10px;">🌓 สลับธีม</button>
+      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
     </aside>
 
     <main class="main-content" style="display:flex; justify-content:center; align-items:center;">
-      
-      <!-- โซนที่ 1: หน้าต่าง Login / Register (ซ่อนเมื่อล็อกอินแล้ว) -->
       <div class="container" id="auth-container">
-        <!-- Sign Up -->
         <div class="form-container sign-up-container">
           <form id="register-form">
             <h1 style="color:#111827;">สร้างบัญชี</h1>
@@ -41,7 +37,6 @@
           </form>
         </div>
 
-        <!-- Sign In -->
         <div class="form-container sign-in-container">
           <form id="login-form">
             <h1 style="color:#111827;">เข้าสู่ระบบ</h1>
@@ -51,7 +46,6 @@
           </form>
         </div>
 
-        <!-- แผงสไลด์ Overlay -->
         <div class="overlay-container">
           <div class="overlay">
             <div class="overlay-panel overlay-left">
@@ -68,13 +62,12 @@
         </div>
       </div>
 
-      <!-- โซนที่ 2: หน้า Profile สมาชิก (แสดงเมื่อล็อกอินแล้ว) -->
       <div class="panel" id="profile-container" style="display:none; width:100%; max-width:550px; text-align:center;">
         <h2>ข้อมูลผู้ใช้งานระบบ</h2>
-        <div style="font-size: 4rem; margin: 20px 0;">👤</div>
+        <div style="font-size:4rem; margin:20px 0;">👤</div>
         <h3 id="profile-username" style="color:var(--cyan); font-size:1.6rem;">Username</h3>
         <p id="profile-email" style="color:var(--dim); margin-top:5px;">user@domain.com</p>
-        <div style="margin: 25px 0; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; text-align: left; font-size: 0.95rem;">
+        <div style="margin:25px 0; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; text-align:left; font-size:0.95rem;">
           <p>🔑 <strong>สถานะเซสชัน:</strong> ยืนยันตัวตนสำเร็จ</p>
           <p>🌐 <strong>บทบาท:</strong> สมาชิกทีม Distributed System</p>
         </div>
@@ -83,7 +76,6 @@
           <button class="btn-primary" id="logout-btn" style="flex:1; border-color:var(--orange); color:var(--orange);">ออกจากระบบ</button>
         </div>
       </div>
-
     </main>
   </div>
 
