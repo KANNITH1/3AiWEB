@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gallery — Forge AI</title>
+  <title>Gallery - Forge AI</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,25 +11,29 @@
   <div class="glow glow-2"></div>
   <div class="layout">
     <aside class="sidebar">
-      <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <nav>
-        <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
-        <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-        <a href="gallery.html" class="nav-item active">🖼️ แกลเลอรี่</a>
-        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      </nav>
-      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
-      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
+      <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+      <a href="gallery.html" class="nav-item active">🖼️ แกลเลอรี่</a>
+      <a href="history.html" class="nav-item">🕓 ประวัติ</a>
+      <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
+        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
     </aside>
+
     <main class="main-content">
-      <h2 class="section-title">Gallery</h2>
-      <p class="section-subtitle">ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้</p>
-      <div id="gallery-grid" class="gallery-grid">
-        <p class="empty-state">ยังไม่มีภาพที่บันทึกไว้ — ลองสร้างภาพแล้วกด "บันทึกลง Gallery" ดูสิ</p>
+      <h1><span class="grad-text">Gallery</span> ของคุณ</h1>
+      <p style="color:var(--dim);">ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้ในระบบ</p>
+      
+      <div class="panel">
+        <div id="gallery-grid" class="gallery-grid"></div>
       </div>
     </main>
   </div>
-  <div class="toast-container" id="toast-container"></div>
+
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

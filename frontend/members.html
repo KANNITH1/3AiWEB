@@ -3,31 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>สมาชิกระบบ — Forge AI</title>
+  <title>Members - Forge AI</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="login.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
 <body>
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
   <div class="layout">
     <aside class="sidebar">
-      <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <nav>
-        <a href="members.html" class="nav-item active">👥 สมาชิกระบบ</a>
-        <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      </nav>
-      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
-      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <a href="members.html" class="nav-item active">👥 สมาชิกระบบ</a>
+      <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+      <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+      <a href="history.html" class="nav-item">🕓 ประวัติ</a>
+      <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
+        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
     </aside>
-    <main class="main-content">
-      <h2 class="section-title">ระบบสมาชิก</h2>
-      <p class="section-subtitle">ฟีเจอร์นี้กำลังพัฒนา — เร็วๆ นี้จะมีระบบ Login / สมัครสมาชิก</p>
-      <div class="empty-state" style="max-width: 480px;">🚧 Coming Soon</div>
+
+    <main class="main-content" style="display:flex; justify-content:center; align-items:center;">
+      <div class="container" id="auth-container">
+        <div class="form-container sign-up-container">
+          <form id="register-form">
+            <h1 style="color:#111827;">สร้างบัญชี</h1>
+            <div class="input-box"><i class='bx bxs-user'></i><input type="text" id="reg-username" placeholder="Username" required /></div>
+            <div class="input-box"><i class='bx bxs-envelope'></i><input type="email" id="reg-email" placeholder="Email" required /></div>
+            <div class="input-box"><i class='bx bxs-lock-alt'></i><input type="password" id="reg-password" placeholder="Password" required /></div>
+            <button type="submit">สมัครสมาชิก</button>
+          </form>
+        </div>
+
+        <div class="form-container sign-in-container">
+          <form id="login-form">
+            <h1 style="color:#111827;">เข้าสู่ระบบ</h1>
+            <div class="input-box"><i class='bx bxs-user'></i><input type="text" id="login-username" placeholder="Username" required /></div>
+            <div class="input-box"><i class='bx bxs-lock-alt'></i><input type="password" id="login-password" placeholder="Password" required /></div>
+            <button type="submit">Login</button>
+          </form>
+        </div>
+
+        <div class="overlay-container">
+          <div class="overlay">
+            <div class="overlay-panel overlay-left">
+              <h1>มีบัญชีแล้ว?</h1>
+              <p>เข้าสู่ระบบเพื่อใช้งานระบบ Distributed Forge AI</p>
+              <button class="ghost" id="signIn">ไปหน้าเข้าสู่ระบบ</button>
+            </div>
+            <div class="overlay-panel overlay-right">
+              <h1>สวัสดี สมาชิกใหม่!</h1>
+              <p>สมัครสมาชิกเพื่อเริ่มทดสอบการสั่งงาน AI</p>
+              <button class="ghost" id="signUp">ไปหน้าสมัครสมาชิก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="profile-container" style="display:none; width:100%; max-width:550px; text-align:center;">
+        <h2>ข้อมูลผู้ใช้งานระบบ</h2>
+        <div style="font-size:4rem; margin:20px 0;">👤</div>
+        <h3 id="profile-username" style="color:var(--cyan); font-size:1.6rem;">Username</h3>
+        <p id="profile-email" style="color:var(--dim); margin-top:5px;">user@domain.com</p>
+        <div style="margin:25px 0; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; text-align:left; font-size:0.95rem;">
+          <p>🔑 <strong>สถานะเซสชัน:</strong> ยืนยันตัวตนสำเร็จ</p>
+          <p>🌐 <strong>บทบาท:</strong> สมาชิกทีม Distributed System</p>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <a href="home.html" style="flex:1; text-decoration:none;"><button class="btn-primary" style="width:100%;">ไปหน้าสร้างภาพ 🎨</button></a>
+          <button class="btn-primary" id="logout-btn" style="flex:1; border-color:var(--orange); color:var(--orange);">ออกจากระบบ</button>
+        </div>
+      </div>
     </main>
   </div>
-  <div class="toast-container" id="toast-container"></div>
+
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
