@@ -1,3 +1,12 @@
+<!--
+  ==========================================
+  history.html - หน้าประวัติการสร้างภาพ
+  ==========================================
+  หน้าที่: แสดงประวัติพร้อม filter, pagination และรายละเอียด prompt
+  ต้อง login ก่อนเข้าใช้งาน: ต้อง login
+  ใช้ไฟล์ JS: shared.js, auth.js, history.js
+  ==========================================
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -7,33 +16,75 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- พื้นหลังตกแต่งตามธีมหลัก -->
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
-  <div class="layout">
-    <aside class="sidebar">
-      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
-      <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-      <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-      <a href="history.html" class="nav-item active">🕓 ประวัติ</a>
-      <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
-        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
-      </div>
-      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
-    </aside>
 
+  <!-- Sidebar จะถูก inject โดย shared.js หลัง auth guard ผ่าน -->
+  <div class="layout">
     <main class="main-content">
+      <!-- หัวข้อและคำอธิบายหน้า History -->
+      <p class="eyebrow">GENERATION LOG</p>
       <h1><span class="grad-text">History</span> การสร้าง</h1>
-      <p style="color:var(--dim);">ประวัติ prompt ที่คุณเคยพิมพ์ (ล่าสุดอยู่บนสุด)</p>
-      
-      <div class="panel">
-        <div id="history-list" style="display:flex; flex-direction:column; gap:12px;"></div>
-      </div>
+      <p class="page-lead">ตรวจสอบ prompt และพารามิเตอร์ของงานที่ผ่านมา</p>
+
+      <!-- ตัวกรองและรายการประวัติถูกควบคุมโดย history.js -->
+      <section class="panel">
+        <div class="filter-bar">
+          <label>
+            ประเภท
+            <select id="history-type">
+              <option value="all">ทั้งหมด</option>
+              <option value="txt2img">Text to Image</option>
+              <option value="img2img">Image to Image</option>
+            </select>
+          </label>
+          <label>
+            วันที่
+            <input id="history-date" type="date">
+          </label>
+        </div>
+
+        <div id="history-list" class="history-list"></div>
+
+        <!-- ปุ่ม pagination ถูกผูก event โดย history.js -->
+        <div class="pagination">
+          <button id="history-prev" class="action-btn" type="button">← ก่อนหน้า</button>
+          <span id="history-page">1 / 1</span>
+          <button id="history-next" class="action-btn" type="button">ถัดไป →</button>
+        </div>
+      </section>
     </main>
   </div>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <!-- Modal แสดง prompt และ parameters ของรายการที่เลือก -->
+  <div class="modal" id="detail-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <section
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="รายละเอียดการสร้าง"
+    >
+      <button
+        class="modal-close"
+        type="button"
+        data-close-modal
+        aria-label="ปิด"
+      >
+        ×
+      </button>
+      <div class="modal-body"></div>
+    </section>
+  </div>
+
+  <!-- Entry point ของหน้า: shared/auth จัดการ shell และ history โหลดข้อมูล -->
+  <script type="module">
+    import { injectNavbar } from './js/shared.js';
+    import './js/auth.js';
+    import { loadHistory } from './js/history.js';
+
+    if (injectNavbar()) loadHistory();
+  </script>
 </body>
 </html>

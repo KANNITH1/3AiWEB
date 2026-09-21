@@ -1,3 +1,12 @@
+<!--
+  ==========================================
+  gallery.html - หน้าแกลเลอรีภาพของผู้ใช้
+  ==========================================
+  หน้าที่: แสดงภาพที่สร้าง พร้อมเปิดรายละเอียดใน modal
+  ต้อง login ก่อนเข้าใช้งาน: ต้อง login
+  ใช้ไฟล์ JS: shared.js, auth.js, gallery.js
+  ==========================================
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -7,33 +16,53 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- พื้นหลังตกแต่งตามธีมหลัก -->
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
-  <div class="layout">
-    <aside class="sidebar">
-      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
-      <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-      <a href="gallery.html" class="nav-item active">🖼️ แกลเลอรี่</a>
-      <a href="history.html" class="nav-item">🕓 ประวัติ</a>
-      <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
-        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
-      </div>
-      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
-    </aside>
 
+  <!-- Sidebar จะถูก inject โดย shared.js หลัง auth guard ผ่าน -->
+  <div class="layout">
     <main class="main-content">
+      <!-- หัวข้อและคำอธิบายหน้า Gallery -->
+      <p class="eyebrow">YOUR CREATIVE ARCHIVE</p>
       <h1><span class="grad-text">Gallery</span> ของคุณ</h1>
-      <p style="color:var(--dim);">ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้ในระบบ</p>
-      
-      <div class="panel">
+      <p class="page-lead">รวมภาพที่สร้างสำเร็จและพร้อมกลับมาดูอีกครั้ง</p>
+
+      <!-- Grid ภาพถูกเติมโดย loadGallery() จาก gallery.js -->
+      <section class="panel">
         <div id="gallery-grid" class="gallery-grid"></div>
-      </div>
+      </section>
     </main>
   </div>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <!-- Modal รายละเอียดภาพ: gallery.js เติมเนื้อหาเมื่อผู้ใช้คลิก card -->
+  <div class="modal" id="detail-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <section
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="รายละเอียดภาพ"
+    >
+      <button
+        class="modal-close"
+        type="button"
+        data-close-modal
+        aria-label="ปิด"
+      >
+        ×
+      </button>
+      <div class="modal-body"></div>
+    </section>
+  </div>
+
+  <!-- Entry point ของหน้า: shared/auth จัดการ navbar/guard และ gallery โหลดข้อมูล -->
+  <script type="module">
+    import { injectNavbar } from './js/shared.js';
+    import './js/auth.js';
+    import { loadGallery } from './js/gallery.js';
+
+    if (injectNavbar()) loadGallery();
+  </script>
 </body>
 </html>

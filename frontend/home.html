@@ -1,3 +1,12 @@
+<!--
+  ==========================================
+  home.html - หน้าสร้างภาพด้วย AI (Image Generator)
+  ==========================================
+  หน้าที่: ให้ผู้ใช้สร้างภาพผ่าน Text to Image และ Image to Image
+  ต้อง login ก่อนเข้าใช้งาน: ต้อง login ผ่าน Auth Guard ใน shared.js
+  ใช้ไฟล์ JS: shared.js (navbar/API), auth.js (auth guard), generator.js (logic หน้านี้)
+  ==========================================
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -6,251 +15,257 @@
   <title>Forge AI - Engine</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .mode-tab-btn {
-      padding: 10px 18px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: var(--dim);
-      cursor: pointer;
-      font-weight: 600;
-      transition: 0.2s;
-    }
-    .mode-tab-btn:hover {
-      color: var(--text);
-    }
-    .mode-tab-btn.active {
-      background: rgba(0, 240, 255, 0.15);
-      color: var(--cyan);
-    }
-    .mode-content {
-      display: none;
-    }
-    .mode-content.active {
-      display: block;
-    }
-    .chat-box {
-      height: 280px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.25);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .chat-msg {
-      max-width: 85%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-    .chat-msg.user {
-      align-self: flex-end;
-      background: var(--cyan);
-      color: #000;
-      font-weight: 500;
-    }
-    .chat-msg.bot {
-      align-self: flex-start;
-      background: rgba(255,255,255,0.05);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .file-drop-area {
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      padding: 30px;
-      text-align: center;
-      color: var(--dim);
-      cursor: pointer;
-      transition: 0.3s;
-      background: rgba(0,0,0,0.15);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .file-drop-area:hover {
-      border-color: var(--cyan);
-      color: var(--text);
-      background: rgba(0, 240, 255, 0.03);
-    }
-    .file-preview {
-      display: none;
-      max-width: 150px;
-      max-height: 150px;
-      border-radius: 8px;
-      border: 1px solid var(--cyan);
-      object-fit: cover;
-    }
-    .use-prompt-btn {
-      display: inline-block;
-      margin-top: 8px;
-      padding: 6px 12px;
-      background: rgba(0, 240, 255, 0.2);
-      border: 1px solid var(--cyan);
-      color: var(--cyan);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: 0.2s;
-    }
-    .use-prompt-btn:hover {
-      background: var(--cyan);
-      color: #000;
-    }
-    .action-bar {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 15px;
-    }
-    .action-btn {
-      padding: 8px 18px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      text-decoration: none;
-    }
-    .action-btn:hover {
-      border-color: var(--cyan);
-      color: var(--cyan);
-    }
+    .engine-panel { max-width: 1180px; }
+    .mode-tabs { display: flex; gap: 8px; flex-wrap: wrap; background: rgba(0,0,0,.2); padding: 6px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 24px; }
+    .mode-tab-btn { padding: 11px 18px; border: 0; border-radius: 8px; background: transparent; color: var(--dim); cursor: pointer; font-weight: 600; transition: .2s; }
+    .mode-tab-btn:hover, .mode-tab-btn.active { color: var(--cyan); background: rgba(0,240,255,.14); }
+    .mode-content { display: none; }
+    .mode-content.active { display: block; animation: fadeUp .25s ease; }
+    .generator-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .8fr); gap: 24px; align-items: start; }
+    .generator-form { display: grid; gap: 10px; }
+    .field-label { display: flex; justify-content: space-between; gap: 12px; color: var(--text); font-weight: 600; margin-top: 4px; }
+    .field-hint { color: var(--dim); font-size: .78rem; font-weight: 400; }
+    .input-field { margin-top: 0; }
+    .prompt-field { min-height: 110px; resize: vertical; }
+    .style-grid { margin: 4px 0 8px; }
+    .chip { border: 1px solid var(--border); }
+    .advanced-toggle { margin-top: 6px; }
+    .advanced-settings { margin: 0 0 10px; }
+    .settings-grid { grid-template-columns: repeat(2, 1fr); }
+    .settings-grid .seed-field { grid-column: 1 / -1; }
+    .range-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    .range-row input { grid-column: 1 / -1; }
+    output { color: var(--cyan); font-weight: 700; }
+    .file-drop-area { min-height: 190px; border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; color: var(--dim); cursor: pointer; transition: .25s; background: rgba(0,0,0,.15); display: grid; place-items: center; gap: 8px; }
+    .file-drop-area:hover, .file-drop-area.is-dragging { border-color: var(--cyan); color: var(--text); background: rgba(0,240,255,.05); }
+    .file-drop-area input { display: none; }
+    .file-preview { display: none; max-width: 100%; max-height: 170px; border-radius: 9px; border: 1px solid var(--cyan); object-fit: contain; }
+    .dropzone-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .dropzone-actions button { display: none; }
+    .dropzone-actions.has-file button { display: inline-flex; }
+    .dropzone-actions.has-file .dropzone-hint { display: none; }
+    .dropzone-hint { display: grid; gap: 5px; }
+    .denoise-control { margin: 10px 0 4px; }
+    .primary-action { margin-top: 8px; }
+    .result-card { min-height: 330px; margin: 0; display: grid; align-content: center; }
+    .result-empty { display: none; place-items: center; min-height: 290px; color: var(--dim); text-align: center; border: 1px dashed var(--border); border-radius: 12px; padding: 30px; }
+    .result-empty strong { display: block; color: var(--text); font-size: 1.05rem; margin-bottom: 8px; }
+    .result-loading, .result-error, .result-output { display: none; }
+    .result-empty.active { display: grid; }
+    .result-loading.active, .result-error.active, .result-output.active { display: block; }
+    .progress-track { height: 8px; background: rgba(255,255,255,.1); border-radius: 99px; overflow: hidden; margin: 18px 0 10px; }
+    .progress-bar { width: 8%; height: 100%; background: linear-gradient(90deg, var(--orange), var(--cyan)); border-radius: inherit; transition: width .35s ease; }
+    .loading-label { color: var(--dim); text-align: center; font-size: .85rem; }
+    .error-box { padding: 16px; border: 1px solid rgba(255,94,0,.5); border-radius: 10px; background: rgba(255,94,0,.08); color: #ffb08c; }
+    .error-box strong { display: block; color: #ff8b47; margin-bottom: 6px; }
+    .result-output { text-align: center; }
+    .generated-image { width: 100%; max-height: 450px; }
+    .result-meta { color: var(--dim); font-size: .8rem; margin-top: 9px; }
+    .action-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
+    .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .before-after figure { margin: 0; color: var(--dim); font-size: .78rem; }
+    .before-after img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 9px; border: 1px solid var(--border); display: block; margin-top: 5px; }
+    @media (max-width: 880px) { .generator-layout { grid-template-columns: 1fr; } .result-card { min-height: 260px; } }
+    @media (max-width: 520px) { .mode-tabs { display: grid; grid-template-columns: 1fr; } .mode-tab-btn { width: 100%; text-align: left; } .settings-grid { grid-template-columns: 1fr; } .settings-grid .seed-field { grid-column: auto; } }
   </style>
 </head>
 <body>
+  <!-- พื้นหลังตกแต่งตามธีม dark และ gradient accent ของระบบ -->
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
+
+  <!-- Sidebar ว่างตอนเริ่มต้นและถูก inject โดย injectNavbar() จาก shared.js -->
   <div class="layout">
-    <aside class="sidebar">
-      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
-      <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
-      <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-      <a href="history.html" class="nav-item">🕓 ประวัติ</a>
-      <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
-        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
-      </div>
-      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
-    </aside>
-
     <main class="main-content">
-      <p style="color:var(--dim); text-transform:uppercase; font-size:0.8rem; letter-spacing:1px;">AI IMAGE ENGINE</p>
+      <!-- ส่วนหัวของ AI Image Engine -->
+      <p class="eyebrow">AI IMAGE ENGINE</p>
       <h1>AI Image <span class="grad-text">Engine</span></h1>
-      <p style="color:var(--dim); margin-bottom:25px;">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
+      <p class="page-lead">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
 
-      <div class="panel">
-        <!-- เมนูเลือกโหมด -->
-        <div style="display:flex; gap:8px; background:rgba(0,0,0,0.2); padding:6px; border-radius:10px; margin-bottom:25px; width:fit-content; border:1px solid var(--border);">
-          <button type="button" class="mode-tab-btn" onclick="switchMode('chat')">💬 Chat</button>
-          <button type="button" class="mode-tab-btn active" onclick="switchMode('txt2img')">🎨 Text to Image</button>
-          <button type="button" class="mode-tab-btn" onclick="switchMode('img2img')">🪄 Image to Image</button>
-          <button type="button" class="mode-tab-btn" onclick="switchMode('upscale')">🔍 Upscale</button>
+      <!-- พื้นที่หลักของ generator -->
+      <section class="panel engine-panel">
+        <!-- Tab สลับ Text to Image และ Image to Image ควบคุมโดย generator.js -->
+        <div class="mode-tabs" role="tablist" aria-label="โหมดสร้างภาพ">
+          <button
+            type="button"
+            class="mode-tab-btn active"
+            data-mode="txt2img"
+            role="tab"
+            aria-selected="true"
+          >
+            🎨 Text to Image
+          </button>
+          <button
+            type="button"
+            class="mode-tab-btn"
+            data-mode="img2img"
+            role="tab"
+            aria-selected="false"
+          >
+            🪄 Image to Image
+          </button>
         </div>
 
-        <!-- 1. โหมด Chat -->
-        <div id="mode-chat" class="mode-content">
-          <div class="chat-box" id="chat-history">
-            <div class="chat-msg bot">สวัสดีครับ! ผมคือ AI Assistant คุณสามารถพิมพ์คุยเพื่อขอไอเดีย แล้วกดส่งไปสร้างภาพได้ทันทีครับ</div>
+        <!-- โหมด Text to Image: model, prompt และ advanced settings -->
+        <div id="mode-txt2img" class="mode-content active" role="tabpanel">
+          <div class="generator-layout">
+            <form id="generate-form" class="generator-form">
+              <!-- Model selection: ชื่อโมเดลตรงกับ AI server และส่งเป็น field model -->
+              <label class="field-label" for="txt2img-model">เลือกโมเดล</label>
+              <select id="txt2img-model" class="input-field model-select">
+                <option value="animagineXL40_v4Opt">animagineXL40_v4Opt · Anime/Illustration</option>
+                <option value="realismByStableYogi_ponyV65">realismByStableYogi_ponyV65 · Photorealistic</option>
+                <option value="sdXL_v10VAEFix">sdXL_v10VAEFix · General purpose</option>
+              </select>
+
+              <!-- Prompt และ Negative Prompt จะถูกส่งไป backend ตาม API contract -->
+              <label class="field-label" for="prompt">Prompt <span class="field-hint">อธิบายภาพที่ต้องการ</span></label>
+              <textarea id="prompt" class="input-field prompt-field" rows="4" placeholder="เช่น a lone astronaut walking on a neon city street" required></textarea>
+              <label class="field-label" for="negative-prompt">Negative Prompt</label>
+              <textarea id="negative-prompt" class="input-field" rows="2" placeholder="เช่น blurry, low quality, distorted hands"></textarea>
+
+              <!-- Advanced settings ถูกซ่อนเป็นค่าเริ่มต้นและเปิดโดย generator.js -->
+              <button type="button" class="advanced-toggle" id="advanced-toggle" aria-expanded="false">⚙ การตั้งค่าขั้นสูง <span>+</span></button>
+              <div class="advanced-settings" id="advanced-settings" hidden>
+                <div class="range-row">
+                  <label for="steps">Sampling Steps</label>
+                  <output id="steps-value">30</output>
+                  <input id="steps" type="range" min="10" max="80" value="30">
+                </div>
+                <div class="range-row">
+                  <label for="cfg-scale">CFG Scale</label>
+                  <output id="cfg-value">7</output>
+                  <input id="cfg-scale" type="range" min="1" max="15" value="7" step="0.5">
+                </div>
+                <div class="settings-grid">
+                  <label>ความกว้าง<input id="width" type="number" value="768" min="256" max="1536" step="64"></label>
+                  <label>ความสูง<input id="height" type="number" value="768" min="256" max="1536" step="64"></label>
+                  <label class="seed-field">
+                    Seed <span class="field-hint">เว้นว่างเพื่อสุ่ม</span>
+                    <div class="seed-row">
+                      <input id="seed" type="number" placeholder="สุ่มอัตโนมัติ">
+                      <button type="button" class="action-btn" id="random-seed">สุ่ม</button>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- ปุ่ม submit เรียก generation flow ใน generator.js -->
+              <button type="submit" class="btn-primary primary-action" id="btn-txt2img"><span class="spinner"></span><span class="btn-text">สร้างภาพ</span></button>
+            </form>
+
+            <!-- พื้นที่ผลลัพธ์: empty/loading/error/output ถูกสลับโดย generator.js -->
+            <div class="panel result-card" id="result-card" aria-live="polite">
+              <div class="result-empty" id="result-empty">
+                <div>
+                  <strong>ผลลัพธ์จะแสดงที่นี่</strong>
+                  <span>เขียน prompt แล้วกดสร้างภาพเพื่อเริ่มต้น</span>
+                </div>
+              </div>
+              <div class="result-loading" id="result-loading">
+                <div class="loading-label">Forge Engine กำลังประมวลผล...</div>
+                <div class="progress-track">
+                  <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div class="loading-label" id="progress-label">กำลังเตรียมคำสั่ง</div>
+              </div>
+              <div class="result-error" id="result-error">
+                <div class="error-box">
+                  <strong>สร้างภาพไม่สำเร็จ</strong>
+                  <span id="error-message">เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง</span>
+                </div>
+                <div class="action-bar">
+                  <button type="button" class="action-btn" id="retry-btn">ลองอีกครั้ง</button>
+                </div>
+              </div>
+              <div class="result-output" id="result-output">
+                <img id="result-image" class="generated-image" alt="ภาพที่สร้างโดย Forge AI">
+                <p class="result-meta" id="result-meta"></p>
+                <div class="action-bar">
+                  <a id="download-btn" class="action-btn" download="forge-ai-output.svg">⬇ ดาวน์โหลด</a>
+                  <button type="button" class="action-btn" id="regenerate-btn">↻ สร้างใหม่อีกครั้ง</button>
+                  <button type="button" class="action-btn" id="fullscreen-btn">⛶ ดูภาพเต็ม</button>
+                </div>
+              </div>
+            </div>
           </div>
-          <form id="chat-form" style="display:flex; gap:10px;">
-            <input type="text" id="chat-input" class="input-field" style="margin:0;" placeholder="พิมพ์คุยกับ AI เพื่อขอ Prompt..." required autocomplete="off">
-            <button type="submit" class="btn-primary" style="width:auto; padding:0 25px;">ส่ง</button>
-          </form>
         </div>
 
-        <!-- 2. โหมด Text to Image -->
-        <div id="mode-txt2img" class="mode-content active">
-          <form id="generate-form">
-            <label style="font-weight:600;">Prompt คำสั่ง</label>
-            <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street" required></textarea>
-            
-            <label style="font-weight:600; display:block; margin-top:15px;">เลือกสไตล์ภาพ</label>
-            <div class="style-grid">
-              <div class="chip active" data-style="realistic">Realistic</div>
-              <div class="chip" data-style="anime">Anime</div>
-              <div class="chip" data-style="cyberpunk">Cyberpunk</div>
-              <div class="chip" data-style="oil-painting">Oil Painting</div>
+        <!-- โหมด Image to Image: upload, prompt, denoising และผลลัพธ์ -->
+        <div id="mode-img2img" class="mode-content" role="tabpanel">
+          <form id="img2img-form" class="generator-form">
+            <!-- Model selection สำหรับ Image to Image -->
+            <label class="field-label" for="img2img-model">เลือกโมเดล</label>
+            <select id="img2img-model" class="input-field model-select">
+              <option value="animagineXL40_v4Opt">animagineXL40_v4Opt · Anime/Illustration</option>
+              <option value="realismByStableYogi_ponyV65">realismByStableYogi_ponyV65 · Photorealistic</option>
+              <option value="sdXL_v10VAEFix">sdXL_v10VAEFix · General purpose</option>
+            </select>
+
+            <!-- Dropzone รองรับ click, keyboard และ drag/drop โดย generator.js -->
+            <label class="field-label" for="img2img-file">รูปต้นฉบับ</label>
+            <div class="file-drop-area" data-dropzone="img2img" tabindex="0">
+              <div class="dropzone-hint">
+                <strong>วางไฟล์รูปภาพที่นี่</strong>
+                <span>หรือคลิกเพื่อเลือก PNG, JPG, WEBP</span>
+              </div>
+              <img id="img2img-preview" class="file-preview" alt="ตัวอย่างภาพต้นฉบับ">
+              <input type="file" id="img2img-file" accept="image/*">
+              <div class="dropzone-actions" id="img2img-actions">
+                <button type="button" class="action-btn" data-replace="img2img">เปลี่ยนรูป</button>
+                <button type="button" class="action-btn" data-clear="img2img">ลบรูป</button>
+              </div>
             </div>
-            <button type="submit" class="btn-primary" id="btn-txt2img">
-              <span class="spinner"></span>
-              <span class="btn-text">สร้างภาพ</span>
-            </button>
+
+            <!-- Prompt และ Negative Prompt ของ Image to Image -->
+            <label class="field-label" for="img2img-prompt">Prompt</label><textarea id="img2img-prompt" class="input-field prompt-field" rows="3" placeholder="เช่น transform into a cinematic cyberpunk portrait" required></textarea>
+            <label class="field-label" for="img2img-negative">Negative Prompt</label><textarea id="img2img-negative" class="input-field" rows="2" placeholder="เช่น blurry, low quality"></textarea>
+
+            <!-- Denoising และ advanced settings ถูกอ่านโดย generator.js -->
+            <div class="denoise-control"><div class="range-row"><label for="denoising-strength">Denoising Strength</label><output id="denoising-value">0.70</output><input id="denoising-strength" type="range" min="0.1" max="1" value="0.7" step="0.05"></div></div>
+            <button type="button" class="advanced-toggle" data-advanced-toggle="img2img" aria-expanded="false">⚙ การตั้งค่าขั้นสูง <span>+</span></button><div class="advanced-settings" data-advanced-panel="img2img" hidden><div class="range-row"><label for="img2img-steps">Sampling Steps</label><output id="img2img-steps-value">30</output><input id="img2img-steps" type="range" min="10" max="80" value="30"></div><div class="range-row"><label for="img2img-cfg">CFG Scale</label><output id="img2img-cfg-value">7</output><input id="img2img-cfg" type="range" min="1" max="15" value="7" step="0.5"></div></div>
+
+            <!-- ปุ่ม submit เรียก Image to Image generation -->
+            <button type="submit" class="btn-primary primary-action" id="btn-img2img"><span class="spinner"></span><span class="btn-text">แปลงภาพ</span></button>
           </form>
-        </div>
 
-        <!-- 3. โหมด Image to Image -->
-        <div id="mode-img2img" class="mode-content">
-          <form id="img2img-form">
-            <label style="font-weight:600;">อัปโหลดรูปต้นฉบับ</label>
-            <div class="file-drop-area" onclick="document.getElementById('img2img-file').click()">
-              <img id="img2img-preview" class="file-preview" alt="Preview">
-              <span id="img2img-filename">📁 คลิกเพื่อเลือกไฟล์รูปภาพ (PNG, JPG)</span>
-              <input type="file" id="img2img-file" accept="image/*" style="display:none;">
+          <!-- ผลลัพธ์ Image to Image และปุ่ม regenerate/download -->
+          <div class="panel result-card secondary-result" id="img2img-result-card" aria-live="polite">
+            <div class="result-empty" id="img2img-empty">
+              <div>
+                <strong>ผลลัพธ์จะแสดงที่นี่</strong>
+                <span>อัปโหลดภาพและกรอก prompt เพื่อเริ่มต้น</span>
+              </div>
             </div>
-
-            <label style="font-weight:600; display:block; margin-top:15px;">Prompt ที่ต้องการแปลงภาพ</label>
-            <textarea id="img2img-prompt" class="input-field" rows="2" placeholder="เช่น make it cyborg style, glowing armor" required></textarea>
-
-            <button type="submit" class="btn-primary" id="btn-img2img" style="margin-top:20px;">
-              <span class="spinner"></span>
-              <span class="btn-text">แปลงภาพ (Image to Image)</span>
-            </button>
-          </form>
-        </div>
-
-        <!-- 4. โหมด Upscale -->
-        <div id="mode-upscale" class="mode-content">
-          <form id="upscale-form">
-            <label style="font-weight:600;">อัปโหลดรูปภาพที่ต้องการขยายความคมชัด</label>
-            <div class="file-drop-area" onclick="document.getElementById('upscale-file').click()">
-              <img id="upscale-preview" class="file-preview" alt="Preview">
-              <span id="upscale-filename">📁 คลิกเพื่อเลือกไฟล์รูปภาพ</span>
-              <input type="file" id="upscale-file" accept="image/*" style="display:none;">
+            <div class="result-loading" id="img2img-loading">
+              <div class="loading-label">กำลังแปลงภาพ...</div>
+              <div class="progress-track">
+                <div class="progress-bar"></div>
+              </div>
             </div>
-
-            <label style="font-weight:600; display:block; margin-top:15px;">ระดับการขยายความละเอียด (Scale Factor)</label>
-            <div class="style-grid">
-              <div class="chip active" data-scale="2x">2x Upscale</div>
-              <div class="chip" data-scale="4x">4x Ultra HD</div>
+            <div class="result-error" id="img2img-error">
+              <div class="error-box">
+                <strong>แปลงภาพไม่สำเร็จ</strong>
+                <span id="img2img-error-message">กรุณาลองใหม่อีกครั้ง</span>
+              </div>
             </div>
-
-            <button type="submit" class="btn-primary" id="btn-upscale">
-              <span class="spinner"></span>
-              <span class="btn-text">ขยายขนาดภาพ (Upscale)</span>
-            </button>
-          </form>
-        </div>
-
-        <!-- ผลลัพธ์ภาพ (ไม่มีไอคอนรูปแตกอีกต่อไป) -->
-        <div id="result-wrapper" class="image-result-wrapper">
-          <div style="font-weight:600; margin-bottom:10px; color:var(--cyan);">✨ ผลลัพธ์ที่ประมวลผลเสร็จสิ้น:</div>
-          <img id="result-image" class="generated-image" alt="AI Generated Output">
-          <div class="action-bar">
-            <a id="download-btn" class="action-btn" download="forge-ai-output.png">⬇️ ดาวน์โหลดรูป</a>
-            <button type="button" class="action-btn" onclick="openFullscreen()">🔍 ดูภาพขนาดเต็ม</button>
+            <div class="result-output" id="img2img-output">
+              <img id="img2img-result-image" class="generated-image" alt="ภาพผลลัพธ์ Image to Image">
+              <div class="action-bar">
+                <a id="img2img-download" class="action-btn" download="forge-img2img.svg">⬇ ดาวน์โหลด</a>
+                <button type="button" class="action-btn" id="img2img-regenerate">↻ สร้างใหม่อีกครั้ง</button>
+              </div>
+            </div>
           </div>
         </div>
-
-      </div>
+      </section>
     </main>
   </div>
-
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <script type="module">
+    import { injectNavbar } from './js/shared.js';
+    import './js/auth.js';
+    import { initGenerator } from './js/generator.js';
+    if (injectNavbar()) initGenerator();
+  </script>
 </body>
 </html>

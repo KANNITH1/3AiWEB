@@ -1,3 +1,12 @@
+<!--
+  ==========================================
+  about.html - หน้าแนะนำระบบ Forge AI
+  ==========================================
+  หน้าที่: อธิบายระบบ เทคโนโลยี และทีมผู้พัฒนา
+  ต้อง login ก่อนเข้าใช้งาน: ไม่ต้อง
+  ใช้ไฟล์ JS: shared.js (navbar), auth.js (auth utilities)
+  ==========================================
+-->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -7,38 +16,45 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- พื้นหลังตกแต่งด้วย glow ตามธีมหลักของระบบ -->
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
-  <div class="layout">
-    <aside class="sidebar">
-      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
-      <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-      <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-      <a href="history.html" class="nav-item">🕓 ประวัติ</a>
-      <a href="about.html" class="nav-item active">ℹ️ เกี่ยวกับ</a>
-      <div id="backend-status-indicator" style="margin-top:auto; font-size:0.85rem; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2);">
-        <span id="status-dot">🟠</span> <span id="status-text">โหมดจำลอง (Demo)</span>
-      </div>
-      <button class="theme-btn" onclick="toggleTheme()" style="margin-top:10px;">🌓 สลับธีม สว่าง/มืด</button>
-    </aside>
 
+  <!-- Navbar/sidebar จะถูก inject โดย injectNavbar() จาก shared.js -->
+  <div class="layout">
     <main class="main-content">
-      <h1>About <span class="grad-text">Forge AI</span></h1>
-      <p style="color:var(--dim);">ระบบสร้างภาพด้วย AI แบบกระจายศูนย์ (Distributed System)</p>
-      
-      <div class="panel" style="line-height:1.8;">
-        <h2>สถาปัตยกรรมระบบ (Distributed Architecture)</h2>
-        <div style="margin-top:20px;">
-          <p><strong>1. Frontend & Nginx (คุณ)</strong><br>IP: <span style="color:var(--cyan)">192.168.1.10</span></p><br>
-          <p><strong>2. Backend API (Flask + SQLite)</strong><br>IP: <span style="color:var(--cyan)">192.168.1.20</span></p><br>
-          <p><strong>3. AI Engine</strong><br>IP: <span style="color:var(--cyan)">192.168.1.30</span></p>
-        </div>
+      <!-- ส่วนหัวของหน้า About -->
+      <p class="eyebrow">ABOUT THE PLATFORM</p>
+      <h1>เกี่ยวกับ <span class="grad-text">Forge AI</span></h1>
+      <p class="page-lead">พื้นที่ทดลองสร้างภาพด้วย AI ที่ออกแบบให้ความคิดเดินทางจาก prompt ไปสู่ผลงานได้อย่างเป็นธรรมชาติ</p>
+      <!-- คำอธิบายภาพรวมสถาปัตยกรรม -->
+      <section class="panel">
+        <h2>ระบบที่สร้างมาเพื่อการทดลอง</h2>
+        <p class="muted" style="line-height:1.8; margin-top:12px;">Forge AI แยกส่วนหน้าบ้าน, Backend API และ AI Engine ออกจากกัน เพื่อให้ทีมสามารถพัฒนาและเชื่อมต่อโมเดลใหม่ได้ในอนาคต โดยผู้ใช้ยังคงมี workspace เดียวสำหรับสร้างภาพ ดูผลงาน และติดตามประวัติ</p>
+      </section>
+
+      <!-- ข้อมูลเทคโนโลยีและทีมผู้พัฒนา -->
+      <div class="profile-grid">
+        <section class="panel">
+          <span class="eyebrow">TECHNOLOGY</span>
+          <h2>เทคโนโลยี</h2>
+          <p class="muted" style="line-height:1.8; margin-top:12px;">Semantic HTML · CSS Responsive · ES Modules · REST API · JWT Authentication · Nginx</p>
+        </section>
+        <section class="panel">
+          <span class="eyebrow">THE TEAM</span>
+          <h2>ทีมผู้พัฒนา</h2>
+          <p class="muted" style="line-height:1.8; margin-top:12px;">ทีมโปรเจกต์ 3AiWEB ร่วมกันออกแบบประสบการณ์และสถาปัตยกรรมสำหรับระบบสร้างภาพแบบกระจาย</p>
+        </section>
       </div>
     </main>
   </div>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <!-- โหลด shared/auth และสร้าง Navbar สำหรับหน้า public -->
+  <script type="module">
+    import { injectNavbar } from './js/shared.js';
+    import './js/auth.js';
+
+    injectNavbar({ protect: false });
+  </script>
 </body>
 </html>

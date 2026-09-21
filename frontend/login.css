@@ -80,6 +80,17 @@
   transition: transform 80ms ease-in, box-shadow 0.2s;
 }
 
+/* Keep the inactive auth form out of the layout even when other form styles apply. */
+#login-form[hidden],
+#register-form[hidden] {
+  display: none !important;
+}
+
+#login-form:not([hidden]),
+#register-form:not([hidden]) {
+  display: grid;
+}
+
 .form-container button:hover {
   box-shadow: 0 4px 15px rgba(0, 243, 255, 0.3);
 }
