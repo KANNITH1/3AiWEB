@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบ — Forge AI</title>
+  <title>สมัครสมาชิก — Forge AI</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -23,10 +23,15 @@
   <div class="auth-layout">
     <section class="panel auth-panel">
       <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <h2 style="margin-bottom: 8px;">เข้าสู่ระบบ</h2>
-      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">ยินดีต้อนรับกลับสู่ระบบ</p>
+      <h2 style="margin-bottom: 8px;">สมัครสมาชิก</h2>
+      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
 
-      <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+      <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+        <div class="field-group">
+          <label for="username">ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="username" class="input-field" placeholder="ชื่อของคุณ" required>
+        </div>
+
         <div class="field-group">
           <label for="email">อีเมล (Email)</label>
           <input type="email" id="email" class="input-field" placeholder="your@email.com" required>
@@ -38,20 +43,22 @@
         </div>
 
         <button type="submit" class="btn-primary" style="margin-top: 10px;">
-          เข้าสู่ระบบ
+          ลงทะเบียน
         </button>
       </form>
 
       <div class="auth-footer">
-        ยังไม่มีบัญชีใช่ไหม? <a href="register.html">สมัครสมาชิก</a>
+        มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a>
       </div>
     </section>
   </div>
 
+  <script src="script.js"></script>
   <script>
-    function handleLogin(e) {
+    function handleRegister(e) {
       e.preventDefault(); 
-      window.location.href = 'dashboard.html';
+      alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+      window.location.href = 'index.html'; 
     }
   </script>
 </body>

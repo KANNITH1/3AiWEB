@@ -1,60 +1,52 @@
-<!--
-  ==========================================
-  about.html - หน้าแนะนำระบบ Forge AI
-  ==========================================
-  หน้าที่: อธิบายระบบ เทคโนโลยี และทีมผู้พัฒนา
-  ต้อง login ก่อนเข้าใช้งาน: ไม่ต้อง
-  ใช้ไฟล์ JS: shared.js (navbar), auth.js (auth utilities)
-  ==========================================
--->
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About - Forge AI</title>
+  <title>About — Forge AI</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- พื้นหลังตกแต่งด้วย glow ตามธีมหลักของระบบ -->
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
-
-  <!-- Navbar/sidebar จะถูก inject โดย injectNavbar() จาก shared.js -->
+  
   <div class="layout">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <nav>
+        <a href="dashboard.html" class="nav-item">📊 ภาพรวมระบบ</a>
+        <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+        <a href="about.html" class="nav-item active">ℹ️ เกี่ยวกับ</a>
+      </nav>
+      
+      <!-- Profile Section -->
+      <div class="sidebar-profile">
+          <div class="profile-info">
+              <span class="profile-name">Kannithi Promtong</span>
+              <span class="profile-role">Student ID: 6710301041</span>
+          </div>
+          <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
+      </div>
+    </aside>
+    
     <main class="main-content">
-      <!-- ส่วนหัวของหน้า About -->
-      <p class="eyebrow">ABOUT THE PLATFORM</p>
-      <h1>เกี่ยวกับ <span class="grad-text">Forge AI</span></h1>
-      <p class="page-lead">พื้นที่ทดลองสร้างภาพด้วย AI ที่ออกแบบให้ความคิดเดินทางจาก prompt ไปสู่ผลงานได้อย่างเป็นธรรมชาติ</p>
-      <!-- คำอธิบายภาพรวมสถาปัตยกรรม -->
-      <section class="panel">
-        <h2>ระบบที่สร้างมาเพื่อการทดลอง</h2>
-        <p class="muted" style="line-height:1.8; margin-top:12px;">Forge AI แยกส่วนหน้าบ้าน, Backend API และ AI Engine ออกจากกัน เพื่อให้ทีมสามารถพัฒนาและเชื่อมต่อโมเดลใหม่ได้ในอนาคต โดยผู้ใช้ยังคงมี workspace เดียวสำหรับสร้างภาพ ดูผลงาน และติดตามประวัติ</p>
-      </section>
+      <h2 class="section-title">เกี่ยวกับโปรเจกต์ (About)</h2>
+      <p class="about-text" style="margin-bottom: 32px;">
+        Forge AI คือโปรเจกต์เว็บแอปพลิเคชันที่ทำงานบนสถาปัตยกรรมแบบกระจายศูนย์ (Distributed System) 
+        ซึ่งผสานการทำงานระหว่าง Frontend, Backend (Flask), AI Server และ Database ผ่าน Nginx Reverse Proxy
+      </p>
 
-      <!-- ข้อมูลเทคโนโลยีและทีมผู้พัฒนา -->
-      <div class="profile-grid">
-        <section class="panel">
-          <span class="eyebrow">TECHNOLOGY</span>
-          <h2>เทคโนโลยี</h2>
-          <p class="muted" style="line-height:1.8; margin-top:12px;">Semantic HTML · CSS Responsive · ES Modules · REST API · JWT Authentication · Nginx</p>
-        </section>
-        <section class="panel">
-          <span class="eyebrow">THE TEAM</span>
-          <h2>ทีมผู้พัฒนา</h2>
-          <p class="muted" style="line-height:1.8; margin-top:12px;">ทีมโปรเจกต์ 3AiWEB ร่วมกันออกแบบประสบการณ์และสถาปัตยกรรมสำหรับระบบสร้างภาพแบบกระจาย</p>
-        </section>
+      <div class="panel" style="margin-top: 0;">
+        <h3 style="margin-bottom: 16px; color: var(--cyan); font-size: 1.2rem;">คณะผู้จัดทำ (Team 1)</h3>
+        <ul style="list-style: none; color: var(--text); line-height: 2; font-size: 0.95rem;">
+          <li>👤 กานต์นิธิ พรมทอง (รหัสนักศึกษา 6710301041)</li>
+          <li>👤 [ชื่อ-นามสกุล เพื่อนคนที่ 2] (รหัสนักศึกษา XXXXXXXXXX)</li>
+          <li>👤 [ชื่อ-นามสกุล เพื่อนคนที่ 3] (รหัสนักศึกษา XXXXXXXXXX)</li>
+        </ul>
       </div>
     </main>
   </div>
-
-  <!-- โหลด shared/auth และสร้าง Navbar สำหรับหน้า public -->
-  <script type="module">
-    import { injectNavbar } from './js/shared.js';
-    import './js/auth.js';
-
-    injectNavbar({ protect: false });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
