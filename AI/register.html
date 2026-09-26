@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครสมาชิก — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .auth-panel { width: 100%; max-width: 400px; text-align: center; }
+    .auth-panel .logo { display: inline-block; margin-bottom: 24px; font-size: 2rem; }
+    .auth-form { text-align: left; }
+    .auth-footer { margin-top: 20px; font-size: 0.85rem; color: var(--dim); text-align: center; }
+    .auth-footer a { color: var(--cyan); text-decoration: none; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="auth-layout">
+    <section class="panel auth-panel">
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <h2 style="margin-bottom: 8px;">สมัครสมาชิก</h2>
+      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
+
+      <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+        <div class="field-group">
+          <label for="username">ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="username" class="input-field" placeholder="ชื่อของคุณ" required>
+        </div>
+
+        <div class="field-group">
+          <label for="email">อีเมล (Email)</label>
+          <input type="email" id="email" class="input-field" placeholder="your@email.com" required>
+        </div>
+
+        <div class="field-group">
+          <label for="password">รหัสผ่าน (Password)</label>
+          <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">
+          ลงทะเบียน
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    function handleRegister(e) {
+      e.preventDefault(); 
+      alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+      window.location.href = 'index.html'; 
+    }
+  </script>
+</body>
+</html>

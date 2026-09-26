@@ -41,26 +41,65 @@ def health():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/models", methods=["GET"])
+def get_models():
+    """
+    ดึงรายชื่อโมเดล (checkpoint) ที่มีอยู่จริงใน Stability Matrix / Forge Neo
+    คืนค่าเป็น [{ "title": "...", "model_name": "..." }, ...]
+    """
+    try:
+        resp = requests.get(f"{FORGE_URL}/sdapi/v1/sd-models", timeout=15)
+        resp.raise_for_status()
+        raw_models = resp.json()
+        models = [
+            {
+                "title": m.get("title"),
+                "model_name": m.get("model_name"),
+            }
+            for m in raw_models
+        ]
+        return jsonify({"models": models})
+
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            "error": "เชื่อมต่อ Forge Neo ไม่ได้ กรุณาเช็คว่าเปิด Stability Matrix (Forge Neo) อยู่หรือไม่"
+        }), 502
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "ดึงรายชื่อโมเดลนานเกินไป (timeout)"}), 504
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/generate", methods=["POST"])
 def generate():
     data = request.get_json(silent=True) or {}
     prompt = data.get("prompt")
     style = data.get("style", "realistic")
+    model = data.get("model")  # title ของ checkpoint ที่เลือกจาก dropdown/chip ฝั่ง frontend
+    negative_prompt = data.get("negative_prompt", "")  # สิ่งที่ไม่ต้องการในภาพ
 
     if not prompt:
         return jsonify({"error": "missing 'prompt'"}), 400
 
     full_prompt = build_prompt(prompt, style)
 
+    payload = {
+        "prompt": full_prompt,
+        "negative_prompt": negative_prompt,
+        "steps": 20,
+        "width": 1024,
+        "height": 1024,
+    }
+
+    # ถ้าผู้ใช้เลือกโมเดล ให้สั่ง Forge Neo สลับ checkpoint ก่อนสร้างภาพ
+    if model:
+        payload["override_settings"] = {"sd_model_checkpoint": model}
+        payload["override_settings_restore_afterwards"] = False
+
     try:
         resp = requests.post(
             f"{FORGE_URL}/sdapi/v1/txt2img",
-            json={
-                "prompt": full_prompt,
-                "steps": 20,
-                "width": 1024,
-                "height": 1024,
-            },
+            json=payload,
             timeout=GEN_TIMEOUT
         )
         resp.raise_for_status()
