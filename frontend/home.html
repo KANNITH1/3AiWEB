@@ -14,14 +14,22 @@
   <div class="layout">
 
     <aside class="sidebar">
-      <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
       <nav>
-        <a href="dashboard.html" class="nav-item">👥 บัญชีของฉัน</a>
+        <a href="dashboard.html" class="nav-item">📊 ภาพรวมระบบ</a>
         <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
         <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
         <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
       </nav>
-      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+      
+      <!-- Profile Section -->
+      <div class="sidebar-profile">
+          <div class="profile-info">
+              <span class="profile-name">Kannithi Promtong</span>
+              <span class="profile-role">Student ID: 6710301041</span>
+          </div>
+          <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
+      </div>
     </aside>
 
     <main class="main-content">
@@ -81,6 +89,12 @@
           <div id="prompt-group" class="field-group">
             <label for="prompt">Prompt (คำอธิบายภาพ)</label>
             <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
+          </div>
+
+          <!-- เพิ่ม Negative Prompt ตรงนี้ -->
+          <div id="negative-prompt-group" class="field-group">
+            <label for="negative-prompt">Negative Prompt (สิ่งที่ไม่ต้องการในภาพ)</label>
+            <textarea id="negative-prompt" class="input-field" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
           </div>
 
           <button type="submit" class="btn-primary" id="submit-btn">

@@ -11,38 +11,70 @@
         <aside class="sidebar">
             <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
             <nav>
-                <a href="dashboard.html" class="nav-item active">👥 บัญชีของฉัน</a>
+                <a href="dashboard.html" class="nav-item active">📊 ภาพรวมระบบ</a>
                 <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
                 <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
                 <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
             </nav>
-            <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+            
+            <!-- Profile Section -->
+            <div class="sidebar-profile">
+                <div class="profile-info">
+                    <span class="profile-name">Kannithi Promtong</span>
+                    <span class="profile-role">Student ID: 6710301041</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
+            </div>
         </aside>
 
         <main class="main-content">
-            <h1>Welcome to <span class="grad-text">Forge AI</span></h1>
-            <p style="color: var(--dim); margin-bottom: 24px;">โปรเจกต์ระบบสร้างภาพด้วย AI ผ่านสถาปัตยกรรมแบบกระจายศูนย์</p>
+            <h1>System <span class="grad-text">Overview</span></h1>
+            <p style="color: var(--dim); margin-bottom: 24px;">ระบบตรวจสอบสถานะเซิร์ฟเวอร์และสถาปัตยกรรม (Distributed System)</p>
             
-            <div class="panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; padding: 20px;">
-                <div>
-                    <h3 style="margin-bottom: 4px; font-size: 1.1rem;">สถานะบัญชี (Account Status)</h3>
-                    <p style="color: var(--dim); font-size: 0.9rem;">เข้าสู่ระบบในชื่อ: <strong style="color: var(--cyan);" id="current-user">Kannithi Promtong</strong></p>
-                </div>
-                <button class="btn-secondary" onclick="logout()" style="border-color: var(--orange); color: var(--orange);">
-                    🚪 ล็อคเอาท์
-                </button>
-            </div>
-
             <div class="panel">
-                <h2>สถาปัตยกรรมระบบ (Distributed System)</h2>
-                <div style="margin-top: 20px; line-height: 1.8;">
-                    <p><strong>1. Frontend & Nginx (คุณ)</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.10</span></p><br>
-                    <p><strong>2. Backend API (Flask + SQLite)</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.20</span></p><br>
-                    <p><strong>3. AI Engine</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.30</span></p>
+                <h2 style="font-size: 1.2rem; margin-bottom: 16px;">Server Nodes Status</h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Node 1: Frontend -->
+                    <div style="display: flex; justify-content: space-between; padding: 14px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.95rem;">1. Frontend & Reverse Proxy (Nginx)</div>
+                            <div style="color: var(--dim); font-size: 0.85rem; margin-top: 4px;">เสิร์ฟ UI และจัดการเส้นทาง Request</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: #10b981; font-size: 0.85rem; font-weight: 600;">🟢 Online</span>
+                            <div style="color: var(--cyan); font-size: 0.85rem; font-family: monospace; margin-top: 4px;">192.168.1.10:8080</div>
+                        </div>
+                    </div>
+
+                    <!-- Node 2: Backend -->
+                    <div style="display: flex; justify-content: space-between; padding: 14px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.95rem;">2. API Server (Flask + SQLite)</div>
+                            <div style="color: var(--dim); font-size: 0.85rem; margin-top: 4px;">จัดการลอจิก, ฐานข้อมูล และตรวจสอบสิทธิ์</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: #f59e0b; font-size: 0.85rem; font-weight: 600;">🟡 Standby</span>
+                            <div style="color: var(--cyan); font-size: 0.85rem; font-family: monospace; margin-top: 4px;">192.168.1.20:5000</div>
+                        </div>
+                    </div>
+
+                    <!-- Node 3: AI Engine -->
+                    <div style="display: flex; justify-content: space-between; padding: 14px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.95rem;">3. AI Image Engine Server</div>
+                            <div style="color: var(--dim); font-size: 0.85rem; margin-top: 4px;">ประมวลผลโมเดลสร้างภาพและตรวจจับวัตถุ</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: #f59e0b; font-size: 0.85rem; font-weight: 600;">🟡 Standby</span>
+                            <div style="color: var(--cyan); font-size: 0.85rem; font-family: monospace; margin-top: 4px;">192.168.1.30:8000</div>
+                        </div>
+                    </div>
                 </div>
+
                 <br>
                 <a href="home.html" style="text-decoration: none;">
-                    <button class="btn-primary" style="width: auto;">เข้าสู่ระบบสร้างภาพ →</button>
+                    <button class="btn-primary" style="width: auto;">ทดสอบระบบสร้างภาพ →</button>
                 </a>
             </div>
         </main>
