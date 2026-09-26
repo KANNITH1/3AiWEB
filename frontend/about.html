@@ -9,28 +9,44 @@
 <body>
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
+  
   <div class="layout">
     <aside class="sidebar">
-      <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
       <nav>
-        <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
+        <a href="dashboard.html" class="nav-item">📊 ภาพรวมระบบ</a>
         <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
         <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
         <a href="about.html" class="nav-item active">ℹ️ เกี่ยวกับ</a>
       </nav>
-      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
-      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
+      
+      <!-- Profile Section -->
+      <div class="sidebar-profile">
+          <div class="profile-info">
+              <span class="profile-name">Kannithi Promtong</span>
+              <span class="profile-role">Student ID: 6710301041</span>
+          </div>
+          <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
+      </div>
     </aside>
+    
     <main class="main-content">
-      <h2 class="section-title">About Forge AI</h2>
-      <p class="about-text">
-        Forge AI คือระบบ Distributed System ที่ประกอบด้วย Frontend, Backend (Flask),
-        AI Server และ Database ทำงานร่วมกันผ่าน Nginx Reverse Proxy
-        เพื่อสร้างภาพจาก prompt ข้อความด้วยพลัง AI
+      <h2 class="section-title">เกี่ยวกับโปรเจกต์ (About)</h2>
+      <p class="about-text" style="margin-bottom: 32px;">
+        Forge AI คือโปรเจกต์เว็บแอปพลิเคชันที่ทำงานบนสถาปัตยกรรมแบบกระจายศูนย์ (Distributed System) 
+        ซึ่งผสานการทำงานระหว่าง Frontend, Backend (Flask), AI Server และ Database ผ่าน Nginx Reverse Proxy
       </p>
+
+      <div class="panel" style="margin-top: 0;">
+        <h3 style="margin-bottom: 16px; color: var(--cyan); font-size: 1.2rem;">คณะผู้จัดทำ (Team 1)</h3>
+        <ul style="list-style: none; color: var(--text); line-height: 2; font-size: 0.95rem;">
+          <li>👤 กานต์นิธิ พรมทอง (รหัสนักศึกษา 6710301041)</li>
+          <li>👤 [ชื่อ-นามสกุล เพื่อนคนที่ 2] (รหัสนักศึกษา XXXXXXXXXX)</li>
+          <li>👤 [ชื่อ-นามสกุล เพื่อนคนที่ 3] (รหัสนักศึกษา XXXXXXXXXX)</li>
+        </ul>
+      </div>
     </main>
   </div>
-  <div class="toast-container" id="toast-container"></div>
   <script src="script.js"></script>
 </body>
 </html>

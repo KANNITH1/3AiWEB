@@ -16,13 +16,12 @@
     <aside class="sidebar">
       <a href="home.html" class="logo">Forge <span class="grad-text">AI</span></a>
       <nav>
-        <a href="members.html" class="nav-item">👥 สมาชิกระบบ</a>
+        <a href="dashboard.html" class="nav-item">👥 บัญชีของฉัน</a>
         <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
         <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
         <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
       </nav>
       <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
-      <button class="theme-btn" id="theme-toggle">🌓 สลับธีม สว่าง/มืด</button>
     </aside>
 
     <main class="main-content">
@@ -35,10 +34,19 @@
         <div class="mode-tabs" id="mode-tabs">
           <button type="button" class="mode-tab active" data-mode="text2img">✍️ Text to Image</button>
           <button type="button" class="mode-tab" data-mode="img2img">🖌️ Image to Image</button>
-          <button type="button" class="mode-tab" data-mode="upscale">🔍 Upscale</button>
+          <button type="button" class="mode-tab" data-mode="blur">💧 Blur</button>
+          <button type="button" class="mode-tab" data-mode="canny">✏️ Canny</button>
+          <button type="button" class="mode-tab" data-mode="objects">📦 Objects Detection</button>
         </div>
 
         <form id="generate-form">
+          <div id="model-group" class="field-group">
+            <label>เลือกโมเดล</label>
+            <div class="style-grid" id="model-grid">
+              <button type="button" class="chip active" data-model="model_1">Model 1</button>
+              <button type="button" class="chip" data-model="model_2">Model 2</button>
+            </div>
+          </div>
 
           <div id="upload-group" class="field-group hidden">
             <label for="source-image">อัปโหลดภาพต้นฉบับ</label>
@@ -52,32 +60,27 @@
             </div>
           </div>
 
+          <div id="blur-group" class="field-group hidden">
+            <label for="blur-strength">Blur strength (ระดับความเบลอ)</label>
+            <input type="number" id="blur-strength" class="input-field" value="15" min="1" max="100">
+          </div>
+
+          <div id="canny-group" class="field-group hidden">
+            <div style="display: flex; gap: 16px;">
+              <div style="flex: 1;">
+                <label for="canny-low">Threshold Low</label>
+                <input type="number" id="canny-low" class="input-field" value="100" min="0" max="255">
+              </div>
+              <div style="flex: 1;">
+                <label for="canny-high">Threshold High</label>
+                <input type="number" id="canny-high" class="input-field" value="200" min="0" max="255">
+              </div>
+            </div>
+          </div>
+
           <div id="prompt-group" class="field-group">
-            <label for="prompt">Prompt</label>
+            <label for="prompt">Prompt (คำอธิบายภาพ)</label>
             <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
-          </div>
-
-          <div id="strength-group" class="field-group hidden">
-            <label for="strength">ระดับการปรับแก้ (Strength): <span id="strength-value">50%</span></label>
-            <input type="range" id="strength" min="10" max="100" value="50">
-          </div>
-
-          <div id="scale-group" class="field-group hidden">
-            <label>ขยายภาพกี่เท่า</label>
-            <div class="style-grid">
-              <button type="button" class="chip active" data-scale="2">2x</button>
-              <button type="button" class="chip" data-scale="4">4x</button>
-            </div>
-          </div>
-
-          <div id="style-group" class="field-group">
-            <label>เลือกสไตล์ภาพ</label>
-            <div class="style-grid" id="style-grid">
-              <button type="button" class="chip active" data-style="realistic">Realistic</button>
-              <button type="button" class="chip" data-style="anime">Anime</button>
-              <button type="button" class="chip" data-style="cyberpunk">Cyberpunk</button>
-              <button type="button" class="chip" data-style="oil-painting">Oil Painting</button>
-            </div>
           </div>
 
           <button type="submit" class="btn-primary" id="submit-btn">
@@ -86,12 +89,13 @@
           </button>
         </form>
 
-        <div class="image-result-wrapper" id="result">
+        <div class="image-result-wrapper" id="result" style="display: none;">
           <img class="generated-image" id="result-image" src="" alt="ผลลัพธ์ภาพ AI">
           <div class="result-actions">
             <button class="btn-secondary" id="save-btn" type="button">💾 บันทึกลง Gallery</button>
           </div>
         </div>
+
       </section>
     </main>
   </div>
