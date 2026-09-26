@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <nav>
+        <a href="dashboard.html" class="nav-item">👥 บัญชีของฉัน</a>
+        <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
+        <a href="gallery.html" class="nav-item active">🖼️ แกลเลอรี่</a>
+        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+      </nav>
+      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+    </aside>
+    <main class="main-content">
+      <h2 class="section-title">Gallery</h2>
+      <p class="section-subtitle">ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้</p>
+      <div id="gallery-grid" class="gallery-grid">
+        <p class="empty-state">ยังไม่มีภาพที่บันทึกไว้ — ลองสร้างภาพแล้วกด "บันทึกลง Gallery" ดูสิ</p>
+      </div>
+    </main>
+  </div>
+  <div class="toast-container" id="toast-container"></div>
+  <script src="script.js"></script>
+</body>
+</html>

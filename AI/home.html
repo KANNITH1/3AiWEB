@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <nav>
+        <a href="dashboard.html" class="nav-item">📊 ภาพรวมระบบ</a>
+        <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
+        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
+        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+      </nav>
+      
+      <!-- Profile Section -->
+      <div class="sidebar-profile">
+          <div class="profile-info">
+              <span class="profile-name">Kannithi Promtong</span>
+              <span class="profile-role">Student ID: 6710301041</span>
+          </div>
+          <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <span class="eyebrow">AI IMAGE ENGINE</span>
+      <h1>AI Image <span class="grad-text">Engine</span></h1>
+      <p class="subtitle">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
+
+      <section class="panel">
+
+        <div class="mode-tabs" id="mode-tabs">
+          <button type="button" class="mode-tab active" data-mode="text2img">✍️ Text to Image</button>
+          <button type="button" class="mode-tab" data-mode="img2img">🖌️ Image to Image</button>
+          <button type="button" class="mode-tab" data-mode="blur">💧 Blur</button>
+          <button type="button" class="mode-tab" data-mode="canny">✏️ Canny</button>
+          <button type="button" class="mode-tab" data-mode="objects">📦 Objects Detection</button>
+        </div>
+
+        <form id="generate-form">
+          <div id="model-group" class="field-group">
+            <label>เลือกโมเดล</label>
+            <div class="style-grid" id="model-grid">
+              <span class="model-loading">กำลังโหลดรายชื่อโมเดล...</span>
+            </div>
+          </div>
+
+          <div id="upload-group" class="field-group hidden">
+            <label for="source-image">อัปโหลดภาพต้นฉบับ</label>
+            <div class="upload-box" id="upload-box">
+              <input type="file" id="source-image" accept="image/*" hidden>
+              <div id="upload-placeholder">
+                <span class="upload-icon">📤</span>
+                <span>คลิกเพื่อเลือกภาพ หรือลากมาวางตรงนี้</span>
+              </div>
+              <img id="upload-preview" alt="ภาพที่อัปโหลด">
+            </div>
+          </div>
+
+          <div id="blur-group" class="field-group hidden">
+            <label for="blur-strength">Blur strength (ระดับความเบลอ)</label>
+            <input type="number" id="blur-strength" class="input-field" value="15" min="1" max="100">
+          </div>
+
+          <div id="canny-group" class="field-group hidden">
+            <div style="display: flex; gap: 16px;">
+              <div style="flex: 1;">
+                <label for="canny-low">Threshold Low</label>
+                <input type="number" id="canny-low" class="input-field" value="100" min="0" max="255">
+              </div>
+              <div style="flex: 1;">
+                <label for="canny-high">Threshold High</label>
+                <input type="number" id="canny-high" class="input-field" value="200" min="0" max="255">
+              </div>
+            </div>
+          </div>
+
+          <div id="objects-group" class="field-group hidden">
+            <label>ตั้งค่าการตรวจจับวัตถุ (Object Detection)</label>
+            <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+              <div style="flex: 1;">
+                <label for="objects-model" style="font-weight:400; font-size:0.85rem;">โมเดล</label>
+                <select id="objects-model" class="input-field">
+                  <option value="efficientdet_lite0">EfficientDet-Lite0 (เร็ว)</option>
+                  <option value="efficientdet_lite2">EfficientDet-Lite2 (แม่นยำกว่า)</option>
+                </select>
+              </div>
+              <div style="flex: 1;">
+                <label for="objects-delegate" style="font-weight:400; font-size:0.85rem;">Hardware</label>
+                <select id="objects-delegate" class="input-field">
+                  <option value="GPU">GPU Accelerated</option>
+                  <option value="CPU">CPU Only</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label for="objects-max-results" style="font-weight:400; font-size:0.85rem;">Max Results: <span id="objects-max-results-val">3</span></label>
+              <input type="range" id="objects-max-results" min="1" max="10" step="1" value="3" style="width:100%;">
+            </div>
+            <div>
+              <label for="objects-threshold" style="font-weight:400; font-size:0.85rem;">Score Threshold: <span id="objects-threshold-val">0.50</span></label>
+              <input type="range" id="objects-threshold" min="0.1" max="0.9" step="0.05" value="0.5" style="width:100%;">
+            </div>
+          </div>
+
+          <div id="prompt-group" class="field-group">
+            <label for="prompt">Prompt (คำอธิบายภาพ)</label>
+            <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
+          </div>
+
+          <!-- เพิ่ม Negative Prompt ตรงนี้ -->
+          <div id="negative-prompt-group" class="field-group">
+            <label for="negative-prompt">Negative Prompt (สิ่งที่ไม่ต้องการในภาพ)</label>
+            <textarea id="negative-prompt" class="input-field" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-btn">
+            <span class="btn-text">สร้างภาพ</span>
+            <span class="spinner"></span>
+          </button>
+        </form>
+
+        <div class="image-result-wrapper" id="result" style="display: none;">
+          <img class="generated-image" id="result-image" src="" alt="ผลลัพธ์ภาพ AI">
+          <div class="result-actions">
+            <button class="btn-secondary" id="save-btn" type="button">💾 บันทึกลง Gallery</button>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="object-detector-module.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

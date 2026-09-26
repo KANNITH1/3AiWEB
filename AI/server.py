@@ -8,12 +8,22 @@ server.py — img2img & upscale proxy ไป Forge Neo (Stability Matrix)
 Endpoints:
   POST /api/img2img  -> { prompt, style, image, strength } -> { image_url }
   POST /api/upscale  -> { image, scale } -> { image_url }
+  POST /api/blur      -> { image, strength } -> { image_url }
+  POST /api/canny     -> { image, low, high } -> { image_url }
   GET  /health
+
+หมายเหตุ: /api/blur และ /api/canny ประมวลผลด้วย PIL/OpenCV ในเครื่องนี้เลย
+ไม่ต้องพึ่ง Forge Neo จึงต้องติดตั้งเพิ่ม: pip install opencv-python-headless numpy
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+import base64
+import io
+import numpy as np
+import cv2
+from PIL import Image, ImageFilter
 
 app = Flask(__name__)
 CORS(app)
@@ -29,6 +39,7 @@ STYLE_SUFFIX = {
 }
 
 GEN_TIMEOUT = 180  # วินาที รอผลสร้างภาพจาก Forge Neo
+MAX_SIDE = 1024     # ด้านที่ยาวที่สุดของภาพ หลัง resize (ต้องหาร 8 ลงตัว)
 
 
 def strip_data_url(image_b64):
@@ -38,6 +49,32 @@ def strip_data_url(image_b64):
     if "," in image_b64:
         return image_b64.split(",", 1)[1]
     return image_b64
+
+
+def sanitize_image_b64(image_b64):
+    """
+    แก้ปัญหา CUDA error ตอน VAE encode ที่เกิดจากภาพต้นฉบับ:
+    1. แปลงเป็น RGB เสมอ (ตัด alpha channel ออก ถ้าเป็น PNG โปร่งใส)
+    2. ย่อภาพให้ด้านยาวสุดไม่เกิน MAX_SIDE และปัดขนาดให้หารด้วย 8 ลงตัว
+       (Stable Diffusion/VAE ต้องการขนาดที่หาร 8 ลงตัวเท่านั้น)
+    คืนค่า (clean_base64_string, width, height)
+    """
+    raw_bytes = base64.b64decode(image_b64)
+    img = Image.open(io.BytesIO(raw_bytes))
+    img = img.convert("RGB")  # ตัด alpha channel / แปลงโหมดสีแปลกๆ ทิ้ง
+
+    w, h = img.size
+    scale = min(MAX_SIDE / max(w, h), 1.0)  # ย่อเฉพาะถ้าใหญ่เกิน ไม่ขยายภาพเล็ก
+    new_w = max(8, int(round(w * scale / 8) * 8))
+    new_h = max(8, int(round(h * scale / 8) * 8))
+
+    if (new_w, new_h) != (w, h):
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    clean_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+    return clean_b64, new_w, new_h
 
 
 @app.route("/health", methods=["GET"])
@@ -55,21 +92,34 @@ def api_img2img():
         return jsonify({"error": "missing 'prompt' or 'image'"}), 400
 
     style = data.get("style", "realistic")
+    model = data.get("model")  # title ของ checkpoint ที่เลือกจากฝั่ง frontend
     strength = float(data.get("strength", 0.5))
-    image_b64 = strip_data_url(image_raw)
+    negative_prompt = data.get("negative_prompt", "")  # สิ่งที่ไม่ต้องการในภาพ
     full_prompt = f"{prompt}{STYLE_SUFFIX.get(style, '')}"
+
+    try:
+        image_b64 = strip_data_url(image_raw)
+        image_b64, img_w, img_h = sanitize_image_b64(image_b64)
+    except Exception as e:
+        return jsonify({"error": f"ไฟล์ภาพไม่ถูกต้องหรือเปิดไม่ได้: {e}"}), 400
+
+    payload = {
+        "prompt": full_prompt,
+        "negative_prompt": negative_prompt,
+        "init_images": [image_b64],
+        "denoising_strength": strength,
+        "steps": 20,
+        "width": img_w,
+        "height": img_h,
+    }
+    if model:
+        payload["override_settings"] = {"sd_model_checkpoint": model}
+        payload["override_settings_restore_afterwards"] = False
 
     try:
         resp = requests.post(
             f"{FORGE_URL}/sdapi/v1/img2img",
-            json={
-                "prompt": full_prompt,
-                "init_images": [image_b64],
-                "denoising_strength": strength,
-                "steps": 20,
-                "width": 1024,
-                "height": 1024,
-            },
+            json=payload,
             timeout=GEN_TIMEOUT
         )
         resp.raise_for_status()
@@ -87,6 +137,87 @@ def api_img2img():
         return jsonify({"error": "สร้างภาพนานเกินไป (timeout)"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/blur", methods=["POST"])
+def api_blur():
+    """
+    รับภาพ + ระดับความเบลอ (blur strength) แล้วเบลอภาพด้วย Gaussian Blur (PIL)
+    ไม่ต้องยิงไป Forge Neo เพราะเป็นการประมวลผลภาพล้วนๆ ทำในเครื่อง Flask ได้เลย
+    """
+    data = request.get_json(silent=True) or {}
+    image_raw = data.get("image")
+
+    if not image_raw:
+        return jsonify({"error": "missing 'image'"}), 400
+
+    try:
+        strength = float(data.get("strength", 15))
+    except (TypeError, ValueError):
+        strength = 15.0
+    strength = max(0.0, min(strength, 100.0))  # กันค่าหลุดขอบเขต (ตาม slider ฝั่ง frontend 1-100)
+
+    # ค่าจาก slider (1-100) แรงเกินไปถ้าใช้เป็น radius ตรงๆ (GaussianBlur radius = พิกเซลจริง)
+    # หารด้วย BLUR_SCALE เพื่อให้ความเบลอค่อยๆ ไล่ระดับแบบใช้งานได้จริง
+    BLUR_SCALE = 4.0
+    blur_radius = strength / BLUR_SCALE
+
+    try:
+        image_b64 = strip_data_url(image_raw)
+        raw_bytes = base64.b64decode(image_b64)
+        img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+
+        blurred = img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+
+        buf = io.BytesIO()
+        blurred.save(buf, format="PNG")
+        result_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        return jsonify({"image_url": f"data:image/png;base64,{result_b64}"})
+
+    except Exception as e:
+        return jsonify({"error": f"เบลอภาพไม่สำเร็จ: {e}"}), 400
+
+
+@app.route("/api/canny", methods=["POST"])
+def api_canny():
+    """
+    รับภาพ + threshold low/high แล้วทำ Canny edge detection ด้วย OpenCV
+    คืนภาพขอบ (edge map) กลับเป็น data URL เหมือนโหมดอื่นๆ
+    """
+    data = request.get_json(silent=True) or {}
+    image_raw = data.get("image")
+
+    if not image_raw:
+        return jsonify({"error": "missing 'image'"}), 400
+
+    try:
+        low = int(data.get("low", 100))
+        high = int(data.get("high", 200))
+    except (TypeError, ValueError):
+        low, high = 100, 200
+    low = max(0, min(low, 255))
+    high = max(0, min(high, 255))
+
+    try:
+        image_b64 = strip_data_url(image_raw)
+        raw_bytes = base64.b64decode(image_b64)
+        img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+
+        np_img = np.array(img)
+        gray = cv2.cvtColor(np_img, cv2.COLOR_RGB2GRAY)
+        edges = cv2.Canny(gray, low, high)
+        edges_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
+
+        result_img = Image.fromarray(edges_rgb)
+        buf = io.BytesIO()
+        result_img.save(buf, format="PNG")
+        result_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        return jsonify({"image_url": f"data:image/png;base64,{result_b64}"})
+
+    except Exception as e:
+        return jsonify({"error": f"ทำ Canny edge detection ไม่สำเร็จ: {e}"}), 400
 
 
 @app.route("/api/upscale", methods=["POST"])

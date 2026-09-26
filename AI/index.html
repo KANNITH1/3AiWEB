@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .auth-panel { width: 100%; max-width: 400px; text-align: center; }
+    .auth-panel .logo { display: inline-block; margin-bottom: 24px; font-size: 2rem; }
+    .auth-form { text-align: left; }
+    .auth-footer { margin-top: 20px; font-size: 0.85rem; color: var(--dim); text-align: center; }
+    .auth-footer a { color: var(--cyan); text-decoration: none; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="auth-layout">
+    <section class="panel auth-panel">
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <h2 style="margin-bottom: 8px;">เข้าสู่ระบบ</h2>
+      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">ยินดีต้อนรับกลับสู่ระบบ</p>
+
+      <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+        <div class="field-group">
+          <label for="email">อีเมล (Email)</label>
+          <input type="email" id="email" class="input-field" placeholder="your@email.com" required>
+        </div>
+
+        <div class="field-group">
+          <label for="password">รหัสผ่าน (Password)</label>
+          <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        ยังไม่มีบัญชีใช่ไหม? <a href="register.html">สมัครสมาชิก</a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function handleLogin(e) {
+      e.preventDefault(); 
+      window.location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>
