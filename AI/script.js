@@ -1,8 +1,9 @@
 // ----------------------------------------------------
 // 0. ค่า config ของ backend
+//    Browser → server.py (5000) → chat.py (5002) → Forge Neo (7860)
+//    หน้าเว็บคุยกับ server.py ที่เดียวเท่านั้น (server.py ส่งต่อให้ chat.py เอง)
 // ----------------------------------------------------
-const CHAT_API_BASE = 'http://127.0.0.1:5002';   // chat.py (text2img)
-const IMG_API_BASE = 'http://127.0.0.1:5000';    // server.py (img2img / upscale)
+const API_BASE = 'http://10.246.178.205:5000';   // server.py
 
 let selectedModel = null; // เก็บ title ของโมเดลที่ผู้ใช้เลือกอยู่
 
@@ -99,14 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------------------------------------------
-    // 2.1 ดึงรายชื่อโมเดลจริงจาก Stability Matrix / Forge Neo
+    // 2.1 ดึงรายชื่อโมเดลจริงจาก Stability Matrix / Forge Neo (ผ่าน server.py → chat.py)
     // ----------------------------------------------------
     async function loadModels() {
         const modelGrid = document.getElementById('model-grid');
         if (!modelGrid) return;
 
         try {
-            const res = await fetch(`${CHAT_API_BASE}/api/models`);
+            const res = await fetch(`${API_BASE}/api/models`);
             const data = await res.json();
 
             if (!res.ok || data.error) {
@@ -136,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         } catch (err) {
-            modelGrid.innerHTML = '<span class="model-loading">⚠️ โหลดโมเดลไม่สำเร็จ: เช็คว่าเปิด Backend (chat.py) และ Forge Neo อยู่หรือไม่</span>';
+            modelGrid.innerHTML = '<span class="model-loading">⚠️ โหลดโมเดลไม่สำเร็จ: เช็คว่าเปิด server.py, chat.py และ Forge Neo อยู่หรือไม่</span>';
         }
     }
 
@@ -305,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let data;
 
                 if (currentMode === 'text2img') {
-                    const res = await fetch(`${CHAT_API_BASE}/api/generate`, {
+                    const res = await fetch(`${API_BASE}/api/generate`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -321,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!uploadPreview || !uploadPreview.src) {
                         throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
                     }
-                    const res = await fetch(`${IMG_API_BASE}/api/img2img`, {
+                    const res = await fetch(`${API_BASE}/api/img2img`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -339,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!uploadPreview || !uploadPreview.src) {
                         throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
                     }
-                    const res = await fetch(`${IMG_API_BASE}/api/blur`, {
+                    const res = await fetch(`${API_BASE}/api/blur`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -354,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!uploadPreview || !uploadPreview.src) {
                         throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
                     }
-                    const res = await fetch(`${IMG_API_BASE}/api/canny`, {
+                    const res = await fetch(`${API_BASE}/api/canny`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
