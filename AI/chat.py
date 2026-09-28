@@ -5,24 +5,17 @@ chat.py — Backend API (Flask)
 รับ request จาก server.py (พอร์ต 5000) แล้วยิงไปที่ Forge Neo (Stability Matrix) เพื่อสร้างภาพ
 
 Endpoints:
-  GET  /api/models     -> รายชื่อโมเดล (checkpoint) ที่มีใน Forge : { models: [{title, model_name}] }
-  POST /api/generate   -> text-to-image : { prompt, negative_prompt, model, style } -> { image_url }
-  POST /api/img2img    -> image-to-image: { prompt, negative_prompt, model, style, image, strength } -> { image_url }
+  GET  /api/models     -> { models: [...] }
+  POST /api/generate   -> text-to-image : { prompt, style } -> { image_url }
+  POST /api/img2img    -> image-to-image: { prompt, style, image, strength } -> { image_url }
   POST /api/upscale    -> upscale       : { image, scale } -> { image_url }
-  POST /api/blur       -> เบลอภาพ (OpenCV)  : { image, strength } -> { image_url }
-  POST /api/canny      -> ขอบภาพ (OpenCV)   : { image, low, high } -> { image_url }
   POST /chat           -> { message }   -> { reply, image_prompt_used }
   GET  /health
-
-ต้องติดตั้ง: pip install flask flask-cors requests pillow opencv-python-headless numpy
 """
 
 import base64
 import io
 
-import cv2
-import numpy as np
-from PIL import Image
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -58,49 +51,28 @@ def strip_data_url(data_url):
     return data_url
 
 
-def prepare_image(b64_image, max_side=1024):
-    """เตรียมภาพก่อนส่งเข้า Forge:
-    1) แปลงเป็น RGB (ตัด alpha ของ PNG โปร่งใส — สาเหตุของ CUDA error ตอน VAE encode)
-    2) ปรับขนาดให้เป็นพหุคูณของ 8 และไม่เกิน max_side
-    คืนค่า (base64 ใหม่, width, height) — ถ้าเปิดภาพไม่ได้จะ raise ValueError"""
+def fit_size(b64_image, max_side=1024):
+    """อ่านขนาดภาพต้นฉบับ ปรับเป็นพหุคูณของ 8 และไม่เกิน max_side (ถ้าไม่มี Pillow ใช้ 1024x1024)"""
     try:
-        img = Image.open(io.BytesIO(base64.b64decode(b64_image))).convert("RGB")
-    except Exception as e:
-        raise ValueError(f"ไฟล์ภาพไม่ถูกต้องหรือเปิดไม่ได้: {e}")
-
-    w, h = img.size
-    scale = min(1.0, max_side / max(w, h))
-    new_w = max(64, int(w * scale) // 8 * 8)
-    new_h = max(64, int(h * scale) // 8 * 8)
-    if (new_w, new_h) != (w, h):
-        img = img.resize((new_w, new_h), Image.LANCZOS)
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode("utf-8"), new_w, new_h
+        from PIL import Image
+        img = Image.open(io.BytesIO(base64.b64decode(b64_image)))
+        w, h = img.size
+        scale = min(1.0, max_side / max(w, h))
+        w = max(64, int(w * scale) // 8 * 8)
+        h = max(64, int(h * scale) // 8 * 8)
+        return w, h
+    except Exception:
+        return 1024, 1024
 
 
-def apply_model(payload, model):
-    """ถ้าผู้ใช้เลือกโมเดล ให้ Forge สลับ checkpoint ก่อนสร้างภาพ"""
-    if model:
-        payload["override_settings"] = {"sd_model_checkpoint": model}
-        payload["override_settings_restore_afterwards"] = False
-    return payload
-
-
-def data_url_to_cv(data_url):
-    raw = base64.b64decode(strip_data_url(data_url))
-    img = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
-    if img is None:
-        raise ValueError("ไฟล์ภาพไม่ถูกต้อง")
-    return img
-
-
-def cv_to_data_url(img):
-    ok, buf = cv2.imencode(".png", img)
-    if not ok:
-        raise ValueError("เข้ารหัสภาพไม่สำเร็จ")
-    return "data:image/png;base64," + base64.b64encode(buf.tobytes()).decode("utf-8")
+def extra_options(data):
+    """negative_prompt และโมเดลที่เลือก (ถ้าหน้าเว็บส่งมา)"""
+    opts = {}
+    if data.get("negative_prompt"):
+        opts["negative_prompt"] = data["negative_prompt"]
+    if data.get("model"):
+        opts["override_settings"] = {"sd_model_checkpoint": data["model"]}
+    return opts
 
 
 def call_forge(endpoint, payload):
@@ -127,19 +99,15 @@ def health():
 
 
 @app.route("/api/models", methods=["GET"])
-def get_models():
-    """ดึงรายชื่อ checkpoint ที่มีจริงใน Forge Neo ให้หน้าเว็บสร้างปุ่มเลือกโมเดล"""
+def models():
+    """รายชื่อโมเดล (checkpoint) ที่มีใน Forge Neo -> { models: [ชื่อ, ...] }"""
     try:
-        resp = requests.get(f"{FORGE_URL}/sdapi/v1/sd-models", timeout=15)
+        resp = requests.get(f"{FORGE_URL}/sdapi/v1/sd-models", timeout=30)
         resp.raise_for_status()
-        models = [{"title": m.get("title"), "model_name": m.get("model_name")} for m in resp.json()]
-        return jsonify({"models": models})
+        names = [m.get("title") or m.get("model_name") for m in resp.json()]
+        return jsonify({"models": [n for n in names if n]})
     except requests.exceptions.ConnectionError:
-        return jsonify({
-            "error": "เชื่อมต่อ Forge Neo ไม่ได้ กรุณาเช็คว่าเปิด Stability Matrix (Forge Neo) อยู่หรือไม่"
-        }), 502
-    except requests.exceptions.Timeout:
-        return jsonify({"error": "ดึงรายชื่อโมเดลนานเกินไป (timeout)"}), 504
+        return jsonify({"error": "เชื่อมต่อ Forge Neo ไม่ได้ กรุณาเช็คว่าเปิด Stability Matrix (Forge Neo) อยู่หรือไม่"}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -153,14 +121,15 @@ def generate():
     if not prompt:
         return jsonify({"error": "missing 'prompt'"}), 400
 
-    payload = apply_model({
-        "prompt": build_prompt(prompt, style),
-        "negative_prompt": data.get("negative_prompt", ""),
+    full_prompt = build_prompt(prompt, style)
+
+    payload = {
+        "prompt": full_prompt,
         "steps": 20,
         "width": 1024,
         "height": 1024,
-    }, data.get("model"))
-
+    }
+    payload.update(extra_options(data))
     result, err = call_forge("/sdapi/v1/txt2img", payload)
     if err:
         return err
@@ -186,21 +155,18 @@ def img2img():
     if not image:
         return jsonify({"error": "missing 'image'"}), 400
 
-    try:
-        b64, width, height = prepare_image(strip_data_url(image))
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    b64 = strip_data_url(image)
+    width, height = fit_size(b64)
 
-    payload = apply_model({
+    payload = {
         "init_images": [b64],
         "prompt": build_prompt(prompt, style),
-        "negative_prompt": data.get("negative_prompt", ""),
         "denoising_strength": strength,
         "steps": 20,
         "width": width,
         "height": height,
-    }, data.get("model"))
-
+    }
+    payload.update(extra_options(data))
     result, err = call_forge("/sdapi/v1/img2img", payload)
     if err:
         return err
@@ -234,35 +200,6 @@ def upscale():
         return jsonify({"error": "Forge Neo ไม่คืนภาพกลับมา"}), 502
 
     return jsonify({"image_url": f"data:image/png;base64,{out}"})
-
-
-@app.route("/api/blur", methods=["POST"])
-def blur():
-    """เบลอภาพด้วย OpenCV (ไม่ผ่าน Forge)"""
-    data = request.get_json(silent=True) or {}
-    if not data.get("image"):
-        return jsonify({"error": "missing 'image'"}), 400
-    try:
-        img = data_url_to_cv(data["image"])
-        ksize = max(1, int(float(data.get("strength", 15)))) | 1  # kernel ต้องเป็นเลขคี่
-        return jsonify({"image_url": cv_to_data_url(cv2.GaussianBlur(img, (ksize, ksize), 0))})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-
-@app.route("/api/canny", methods=["POST"])
-def canny():
-    """หาเส้นขอบภาพด้วย Canny (OpenCV, ไม่ผ่าน Forge)"""
-    data = request.get_json(silent=True) or {}
-    if not data.get("image"):
-        return jsonify({"error": "missing 'image'"}), 400
-    try:
-        img = data_url_to_cv(data["image"])
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, int(data.get("low", 100)), int(data.get("high", 200)))
-        return jsonify({"image_url": cv_to_data_url(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/chat", methods=["POST"])

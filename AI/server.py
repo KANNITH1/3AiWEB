@@ -23,14 +23,17 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-# เปลี่ยน IP เป็นเครื่องที่รัน Forge Neo หากรันแยกเครื่อง
-FORGE_URL = "http://127.0.0.1:7860"
+CHAT_URL = "http://127.0.0.1:5002"   # ถ้า chat.py อยู่คนละเครื่อง ให้เปลี่ยน IP
+TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) ใน chat.py
 
-STYLE_SUFFIX = {
-    "realistic": ", photorealistic, highly detailed, sharp focus, 8k",
-    "anime": ", anime style, vibrant colors, cel shading",
-    "cyberpunk": ", cyberpunk style, neon lights, futuristic city",
-    "oil-painting": ", oil painting, visible brush strokes, classical art style",
+# field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
+REQUIRED = {
+    "/api/generate": ["prompt"],
+    "/api/img2img": ["prompt", "image"],
+    "/api/upscale": ["image"],
+    "/api/blur": ["image"],
+    "/api/canny": ["image"],
+    "/chat": ["message"],
 }
 
 
