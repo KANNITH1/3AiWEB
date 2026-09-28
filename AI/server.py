@@ -29,7 +29,7 @@ app = Flask(__name__)
 CORS(app)
 
 # เปลี่ยน IP เป็นเครื่องที่รัน Forge Neo หากรันแยกเครื่อง
-FORGE_URL = "http://127.0.0.1:7860"
+FORGE_URL = "http://10.192.0.160:7860"
 
 STYLE_SUFFIX = {
     "realistic": ", photorealistic, highly detailed, sharp focus, 8k",
