@@ -26,7 +26,7 @@ CORS(app)
 CHAT_URL = "http://127.0.0.1:5002"   # ถ้า chat.py อยู่คนละเครื่อง ให้เปลี่ยน IP
 TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) ใน chat.py
 
-# field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
+# field ที่ต้องมีในแต่ละ endpoint (POST)
 REQUIRED = {
     "/api/generate": ["prompt"],
     "/api/img2img": ["prompt", "image"],
