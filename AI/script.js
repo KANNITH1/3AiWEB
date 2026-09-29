@@ -3,7 +3,7 @@
 //    Browser → server.py (5000) → chat.py (5002) → Forge Neo (7860)
 //    หน้าเว็บคุยกับ server.py ที่เดียวเท่านั้น (server.py ส่งต่อให้ chat.py เอง)
 // ----------------------------------------------------
-const API_BASE = 'http://10.246.178.205:5000';   // server.py
+const API_BASE = 'http://10.192.1.95:5000';   // server.py
 
 let selectedModel = null; // เก็บ title ของโมเดลที่ผู้ใช้เลือกอยู่
 
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         } catch (err) {
-            modelGrid.innerHTML = '<span class="model-loading">⚠️ โหลดโมเดลไม่สำเร็จ: เช็คว่าเปิด server.py, chat.py และ Forge Neo อยู่หรือไม่</span>';
+            modelGrid.innerHTML = `<span class="model-loading">⚠️ โหลดโมเดลไม่สำเร็จ: ${err.message}</span>`;
         }
     }
 
