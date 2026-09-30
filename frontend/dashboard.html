@@ -2,84 +2,75 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Forge AI</title>
+    <!-- โหลด CSS ตัวเดียวกันกับ home.html -->
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="glow glow-1"></div><div class="glow glow-2"></div>
-    <div class="layout">
+    <div class="app-layout">
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
-            <nav>
-                <a href="dashboard.html" class="nav-item active">📊 ภาพรวมระบบ</a>
-                <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-                <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-                <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+            <div class="brand">
+                <h1>Forge <span>AI</span></h1>
+            </div>
+            <nav class="nav-menu">
+                <!-- เมนูนี้ Active -->
+                <a href="dashboard.html" class="nav-item active"><span class="icon">📊</span><span>ภาพรวมระบบ</span></a>
+                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
+                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="about.html" class="nav-item"><span class="icon">ℹ️</span><span>เกี่ยวกับ</span></a>
             </nav>
-            
-            <!-- Profile Section -->
-            <div class="sidebar-profile">
-                <div class="profile-info">
-                    <span class="profile-name">Kannithi Promtong</span>
-                    <span class="profile-role">Student ID: 6710301041</span>
+            <div class="user-profile">
+                <div class="avatar-placeholder">KP</div>
+                <div class="user-info">
+                    <span class="user-name">Kannithi Promtong</span>
+                    <span class="user-id">Student ID: 6710301041</span>
                 </div>
-                <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
             </div>
         </aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <h1>System <span class="grad-text">Overview</span></h1>
-            <p style="color: var(--dim); margin-bottom: 24px;">ระบบตรวจสอบสถานะเซิร์ฟเวอร์และสถาปัตยกรรม (Distributed System)</p>
-            
-            <div class="panel">
-                <h2 style="font-size: 1.2rem; margin-bottom: 16px;">Server Nodes Status</h2>
-                
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <!-- Node 1: Frontend -->
-                    <div style="display: flex; justify-content: space-between; padding: 14px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.95rem;">1. Frontend & Reverse Proxy (Nginx)</div>
-                            <div style="color: var(--dim); font-size: 0.85rem; margin-top: 4px;">เสิร์ฟ UI และจัดการเส้นทาง Request</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="color: #10b981; font-size: 0.85rem; font-weight: 600;">🟢 Online</span>
-                            <div style="color: var(--cyan); font-size: 0.85rem; font-family: monospace; margin-top: 4px;">192.168.1.10:8080</div>
-                        </div>
-                    </div>
+            <header class="page-header">
+                <span class="badge-subtitle">DASHBOARD</span>
+                <h2>System <span class="highlight">Overview</span></h2>
+                <p>ระบบตรวจสอบสถานะเซิร์ฟเวอร์และสถาปัตยกรรม (Distributed System)</p>
+            </header>
 
-                    <!-- Node 2: Backend -->
-                    <div style="display: flex; justify-content: space-between; padding: 14px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.95rem;">2. API Server (Flask + SQLite)</div>
-                            <div style="color: var(--dim); font-size: 0.85rem; margin-top: 4px;">จัดการลอจิก, ฐานข้อมูล และตรวจสอบสิทธิ์</div>
+            <div class="content-container">
+                <div class="form-card">
+                    <h3 style="margin-bottom: 20px;">Server Nodes Status</h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Node 1 -->
+                        <div style="padding: 15px; border: 1px solid var(--c-border); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin-bottom: 5px;">1. Frontend & Reverse Proxy (Nginx)</h4>
+                                <p style="font-size: 13px; color: var(--c-text-muted);">เสิร์ฟ UI และจัดการเส้นทาง Request</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #10b981; font-weight: 600;">🟢 Online</span>
+                                <p style="font-size: 13px; color: var(--c-text-muted); margin-top: 5px;">localhost:8080</p>
+                            </div>
                         </div>
-                        <div style="text-align: right;">
-                            <span style="color: #f59e0b; font-size: 0.85rem; font-weight: 600;">🟡 Standby</span>
-                            <div style="color: var(--cyan); font-size: 0.85rem; font-family: monospace; margin-top: 4px;">192.168.1.20:5000</div>
-                        </div>
-                    </div>
 
-                    <!-- Node 3: AI Engine -->
-                    <div style="display: flex; justify-content: space-between; padding: 14px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.95rem;">3. AI Image Engine Server</div>
-                            <div style="color: var(--dim); font-size: 0.85rem; margin-top: 4px;">ประมวลผลโมเดลสร้างภาพและตรวจจับวัตถุ</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="color: #f59e0b; font-size: 0.85rem; font-weight: 600;">🟡 Standby</span>
-                            <div style="color: var(--cyan); font-size: 0.85rem; font-family: monospace; margin-top: 4px;">192.168.1.30:8000</div>
+                        <!-- Node 2 -->
+                        <div style="padding: 15px; border: 1px solid var(--c-border); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin-bottom: 5px;">2. API Server (Flask + SQLite)</h4>
+                                <p style="font-size: 13px; color: var(--c-text-muted);">จัดการลอจิก และฐานข้อมูล</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #10b981; font-weight: 600;">🟢 Online</span>
+                                <p style="font-size: 13px; color: var(--c-text-muted); margin-top: 5px;">172.20.56.243:5000</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <br>
-                <a href="home.html" style="text-decoration: none;">
-                    <button class="btn-primary" style="width: auto;">ทดสอบระบบสร้างภาพ →</button>
-                </a>
             </div>
         </main>
     </div>
-    
-    <script src="script.js"></script>
 </body>
 </html>

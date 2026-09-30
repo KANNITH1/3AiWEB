@@ -1,124 +1,255 @@
-document.addEventListener('DOMContentLoaded', () => {
+/**
+ * @class ForgeAIController
+ * @description จัดการ Logic ทั้งหมดของระบบสร้างภาพ AI แบบแยกส่วน (Clean Code Architecture)
+ */
+class ForgeAIController {
+    constructor() {
+        // 1. Initial State
+        this.state = {
+            mode: 'text2img',
+            model: 'sd_counterfeitV30_v30',
+            lora: 'none',
+            seed: -1,
+            sourceImageBase64: null // ตัวแปรเก็บภาพที่อัปโหลด
+        };
 
-    // 1. ระบบจัดการ แท็บโหมด (Dynamic UI)
-    const modeTabs = document.querySelectorAll('.mode-tab');
-    
-    // อัปเดต uiGroups ให้รู้จัก negativePrompt
-    const uiGroups = {
-        upload: document.getElementById('upload-group'),
-        prompt: document.getElementById('prompt-group'),
-        negativePrompt: document.getElementById('negative-prompt-group'),
-        blur: document.getElementById('blur-group'),
-        canny: document.getElementById('canny-group')
-    };
+        // 2. Cache DOM Elements
+        this.elements = {
+            form: document.getElementById('generate-form'),
+            prompt: document.getElementById('prompt-input'),
+            negativePrompt: document.getElementById('negative-prompt-input'),
+            seed: document.getElementById('seed-input'),
+            blurInput: document.getElementById('blur-input'),
+            btnRandomSeed: document.getElementById('random-seed-btn'),
+            btnSubmit: document.getElementById('submit-btn'),
+            btnText: document.getElementById('btn-text'),
+            btnLoader: document.getElementById('btn-loader'),
+            resultContainer: document.getElementById('result-container'),
+            outputImage: document.getElementById('output-image'),
+            usedSeedDisplay: document.getElementById('used-seed-display'),
+            seedDisplayText: document.getElementById('seed-display-text'),
+            
+            // Elements สำหรับกลุ่มฟอร์ม (เปิด-ปิดตามโหมด)
+            groupModel: document.getElementById('group-model'),
+            groupLora: document.getElementById('group-lora'),
+            groupUpload: document.getElementById('group-upload'),
+            groupPrompts: document.getElementById('group-prompts'),
+            groupBlur: document.getElementById('group-blur-strength'),
+            groupSeed: document.getElementById('group-seed'),
 
-    if (modeTabs.length > 0) {
-        modeTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelector('.mode-tab.active').classList.remove('active');
-                tab.classList.add('active');
+            // Elements สำหรับการอัปโหลด
+            sourceInput: document.getElementById('source-image-input'),
+            previewContainer: document.getElementById('image-preview-container'),
+            sourcePreview: document.getElementById('source-image-preview'),
+            uploadLabel: document.getElementById('upload-label'),
+            btnRemoveImage: document.getElementById('remove-image-btn')
+        };
 
-                const mode = tab.dataset.mode; 
+        // 3. Initialize App
+        this.initEventListeners();
+        this.initImageUpload();
+        this.updateUIForMode(this.state.mode); // รันครั้งแรกเพื่อให้หน้าตาถูกตามโหมดเริ่มต้น
+        
+        console.log("[Forge AI] ระบบพร้อมใช้งาน เปิดผ่าน Live Server");
+    }
 
-                // ซ่อนทุกกลุ่มก่อน
-                Object.values(uiGroups).forEach(group => {
-                    if (group) group.classList.add('hidden');
-                });
+    /**
+     * กำหนด Event Listeners ทั้งหมด
+     */
+    initEventListeners() {
+        this.setupButtonGroup('#mode-selector .mode-tab', 'mode');
+        this.setupButtonGroup('#model-selector .model-btn', 'model');
+        this.setupButtonGroup('#lora-selector .lora-btn', 'lora');
 
-                // แสดงผลตามโหมดที่เลือก
-                if (mode === 'text2img') {
-                    if(uiGroups.prompt) uiGroups.prompt.classList.remove('hidden');
-                    if(uiGroups.negativePrompt) uiGroups.negativePrompt.classList.remove('hidden');
-                } 
-                else if (mode === 'img2img') {
-                    if(uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if(uiGroups.prompt) uiGroups.prompt.classList.remove('hidden');
-                    if(uiGroups.negativePrompt) uiGroups.negativePrompt.classList.remove('hidden');
-                } 
-                else if (mode === 'blur') {
-                    if(uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if(uiGroups.blur) uiGroups.blur.classList.remove('hidden'); 
-                } 
-                else if (mode === 'canny') {
-                    if(uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if(uiGroups.canny) uiGroups.canny.classList.remove('hidden'); 
-                } 
-                else if (mode === 'objects') {
-                    if(uiGroups.upload) uiGroups.upload.classList.remove('hidden');
+        if (this.elements.btnRandomSeed) {
+            this.elements.btnRandomSeed.addEventListener('click', () => {
+                this.elements.seed.value = -1;
+            });
+        }
+
+        this.elements.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    }
+
+    /**
+     * Utility Function สำหรับสลับสถานะ Active ของปุ่ม
+     */
+    setupButtonGroup(selector, stateKey) {
+        const buttons = document.querySelectorAll(selector);
+        buttons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                buttons.forEach(b => b.classList.remove('active'));
+                const clickedBtn = e.currentTarget;
+                clickedBtn.classList.add('active');
+                
+                this.state[stateKey] = clickedBtn.getAttribute('data-value') || clickedBtn.getAttribute('data-mode');
+
+                // ถ้าเปลี่ยนโหมด ให้ไปเรียกฟังก์ชันปรับหน้าตา UI
+                if (stateKey === 'mode') {
+                    this.updateUIForMode(this.state.mode);
                 }
             });
         });
     }
 
-    // 2. ฟังก์ชันช่วยสลับปุ่มเลือก Model
-    function setupChipSelection(selector) {
-        const chips = document.querySelectorAll(selector);
-        if (chips.length > 0) {
-            chips.forEach(chip => {
-                chip.addEventListener('click', () => {
-                    const parent = chip.closest('.style-grid');
-                    parent.querySelector('.chip.active').classList.remove('active');
-                    chip.classList.add('active');
-                });
+    /**
+     * จัดการซ่อน/แสดงช่องต่างๆ ตาม Mode ที่เลือก
+     */
+    updateUIForMode(mode) {
+        // ค่าเริ่มต้นซ่อนทุกอย่างก่อน แล้วค่อยเปิดเฉพาะที่จำเป็น
+        this.elements.groupUpload.style.display = 'none';
+        this.elements.groupLora.style.display = 'none';
+        this.elements.groupPrompts.style.display = 'none';
+        this.elements.groupBlur.style.display = 'none';
+        this.elements.groupSeed.style.display = 'none';
+
+        if (mode === 'text2img') {
+            this.elements.groupLora.style.display = 'block';
+            this.elements.groupPrompts.style.display = 'block';
+            this.elements.groupSeed.style.display = 'block';
+        } 
+        else if (mode === 'img2img') {
+            this.elements.groupUpload.style.display = 'block';
+            this.elements.groupLora.style.display = 'block';
+            this.elements.groupPrompts.style.display = 'block';
+            this.elements.groupSeed.style.display = 'block';
+        }
+        else if (mode === 'blur') {
+            this.elements.groupUpload.style.display = 'block';
+            this.elements.groupBlur.style.display = 'block';
+        }
+        else if (mode === 'canny' || mode === 'detection') {
+            this.elements.groupUpload.style.display = 'block';
+        }
+    }
+
+    /**
+     * จัดการการอัปโหลดและพรีวิวภาพ
+     */
+    initImageUpload() {
+        if (!this.elements.sourceInput) return;
+
+        this.elements.sourceInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.elements.sourcePreview.src = event.target.result;
+                    this.elements.uploadLabel.style.display = 'none';
+                    this.elements.previewContainer.style.display = 'block';
+                    this.state.sourceImageBase64 = event.target.result.split(',')[1];
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        if (this.elements.btnRemoveImage) {
+            this.elements.btnRemoveImage.addEventListener('click', () => {
+                this.elements.sourceInput.value = '';
+                this.state.sourceImageBase64 = null;
+                this.elements.sourcePreview.src = '';
+                this.elements.previewContainer.style.display = 'none';
+                this.elements.uploadLabel.style.display = 'flex';
             });
         }
     }
 
-    setupChipSelection('#model-grid .chip');
+    /**
+     * ฟังก์ชันหลักในการรวบรวมข้อมูลและส่ง API
+     */
+    async handleSubmit(e) {
+        e.preventDefault();
 
-    // 3. ระบบจัดการการกด "สร้างภาพ" (Form Submit)
-    const generateForm = document.getElementById('generate-form');
-    const submitBtn = document.getElementById('submit-btn');
-    const resultWrapper = document.getElementById('result');
-    const promptInput = document.getElementById('prompt');
+        // 1. สร้าง Payload พื้นฐานที่ทุกโหมดมี
+        const payload = {
+            mode: this.state.mode,
+            model: this.state.model
+        };
 
-    if (generateForm) {
-        generateForm.addEventListener('submit', (e) => {
-            e.preventDefault(); 
+        // 2. เติมข้อมูลตามโหมด
+        if (['text2img', 'img2img'].includes(this.state.mode)) {
+            payload.lora = this.state.lora;
+            payload.prompt = this.elements.prompt.value.trim();
+            payload.negative_prompt = this.elements.negativePrompt.value.trim();
+            payload.seed = parseInt(this.elements.seed.value, 10) || -1;
+        }
 
-            const currentMode = document.querySelector('.mode-tab.active').dataset.mode;
+        if (this.state.mode === 'blur') {
+            payload.blur_strength = parseInt(this.elements.blurInput.value, 10) || 15;
+        }
 
-            // ตรวจสอบข้อมูลว่ากรอก Prompt หรือยัง (ใช้เฉพาะ text2img และ img2img)
-            if ((currentMode === 'text2img' || currentMode === 'img2img') && promptInput.value.trim() === '') {
-                showToast('❌ ไม่สำเร็จ: กรุณากรอกข้อความ Prompt', 'error');
-                return; 
+        // 3. ตรวจสอบการอัปโหลดรูป
+        if (this.state.mode !== 'text2img') {
+            if (this.state.sourceImageBase64) {
+                payload.init_image = this.state.sourceImageBase64;
+            } else {
+                alert("กรุณาอัปโหลดรูปภาพตั้งต้นก่อนครับ!");
+                return;
+            }
+        }
+
+        this.setLoadingState(true);
+
+        try {
+            // ยิงตรงไป IP ของเพื่อน (เพื่อใช้ Live Server)
+            const backendURL = 'http://172.20.56.243:5000/api/generate';
+            
+            const response = await fetch(backendURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
             }
 
-            // แสดงสถานะ Loading
-            submitBtn.classList.add('loading');
-            submitBtn.disabled = true;
-            resultWrapper.style.display = 'none';
+            const data = await response.json();
+            this.renderResult(data, payload);
 
-            // จำลองเวลาโหลด 1 วินาที
-            setTimeout(() => {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                showToast('❌ ไม่สำเร็จ: ไม่สามารถเชื่อมต่อกับระบบ AI ได้', 'error');
-            }, 1000);
-        });
+        } catch (error) {
+            console.error('[Forge AI] Generation Error:', error);
+            alert(`เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}\n(โปรดเช็ค Backend ว่ารันอยู่หรือไม่ หรือติดปัญหา CORS)`);
+        } finally {
+            this.setLoadingState(false);
+        }
     }
+
+    /**
+     * จัดการสถานะ UI ระหว่างรอผลลัพธ์ (Loading)
+     */
+    setLoadingState(isLoading) {
+        this.elements.btnSubmit.disabled = isLoading;
+        this.elements.btnText.textContent = isLoading ? 'กำลังประมวลผลระบบ AI...' : 'สร้างภาพ';
+        this.elements.btnLoader.style.display = isLoading ? 'inline-block' : 'none';
+    }
+
+    /**
+     * แสดงผลรูปภาพและข้อมูลที่ได้รับกลับมาจากเซิร์ฟเวอร์
+     */
+    renderResult(data, payloadInfo) {
+        if (!data.image_url && !data.image_base64) {
+            alert('ไม่พบข้อมูลรูปภาพตอบกลับจาก Backend');
+            return;
+        }
+
+        this.elements.outputImage.src = data.image_url 
+            ? data.image_url 
+            : `data:image/png;base64,${data.image_base64}`;
+        
+        // ถ้าเป็นโหมดที่มีการใช้ Seed ให้แสดงข้อความ Seed
+        if (['text2img', 'img2img'].includes(payloadInfo.mode)) {
+            this.elements.seedDisplayText.style.display = 'block';
+            this.elements.usedSeedDisplay.textContent = data.seed !== undefined ? data.seed : payloadInfo.seed;
+        } else {
+            // โหมดอื่นๆ เช่น Blur, Canny ซ่อนข้อความ Seed ทิ้งไป
+            this.elements.seedDisplayText.style.display = 'none';
+        }
+        
+        this.elements.resultContainer.style.display = 'block';
+        this.elements.resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new ForgeAIController();
 });
-
-// 4. ฟังก์ชันสำหรับแจ้งเตือน Pop-up (Toast Message)
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-
-// 5. ฟังก์ชันสำหรับปุ่ม Logout
-function logout() {
-    const confirmLogout = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
-    if (confirmLogout) {
-        window.location.href = 'index.html';
-    }
-}
