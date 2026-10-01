@@ -25,6 +25,24 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
+
+# ---- จัดการ CORS preflight เอง (กันกรณี OPTIONS ไม่ได้ status 200) ----
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        resp = app.make_default_options_response()
+        resp.status_code = 200
+        return resp
+
+
+@app.after_request
+def add_cors_headers(resp):
+    resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
+
+
 AUTH_URL = "http://127.0.0.1:5001"   # ที่อยู่ auth.py
 CHAT_URL = "http://127.0.0.1:5002"   # ที่อยู่ chat.py
 TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) ใน chat.py
@@ -32,7 +50,7 @@ TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) 
 # ⚠️ ต้องตรงกับ SECRET_KEY ใน auth.py เป๊ะๆ ไม่งั้น token จะถอดไม่ผ่าน
 SECRET_KEY = "dev-secret-change-me"
 
-# field ที่ต้องมีในแต่ละ endpoint (POST)
+# field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
 REQUIRED = {
     "/api/generate": ["prompt"],
     "/api/img2img": ["prompt", "image"],
@@ -76,12 +94,20 @@ def forward(base_url, path, method="POST", service="server"):
         data = request.get_json(silent=True)
         if not isinstance(data, dict):
             return jsonify({"error": "invalid JSON body"}), 400
-        for field in REQUIRED.get(path, []):
+
+        fields = REQUIRED.get(path, [])
+        # /api/generate ที่ mode ไม่ใช่ text2img (เผื่ออนาคต) ต้องมีรูป init_image แทน
+        if path == "/api/generate" and data.get("mode", "text2img") != "text2img":
+            fields = ["init_image"]
+
+        for field in fields:
             if not data.get(field):
                 return jsonify({"error": f"missing '{field}'"}), 400
 
     try:
-        resp = requests.request(method, f"{base_url}{path}", json=data, timeout=TIMEOUT)
+        resp = requests.request(method, f"{base_url}{path}", json=data,
+                                 headers={"Authorization": request.headers.get("Authorization", "")},
+                                 timeout=TIMEOUT)
     except requests.exceptions.ConnectionError:
         return jsonify({"error": f"เชื่อมต่อ {service} ไม่ได้ กรุณาเช็คว่ารันอยู่หรือไม่"}), 502
     except requests.exceptions.Timeout:
@@ -124,27 +150,13 @@ def login():
 @app.route("/api/me", methods=["GET"])
 @login_required
 def me():
-    # ส่ง token เดิมต่อให้ auth.py ตรวจอีกชั้น
-    try:
-        resp = requests.get(f"{AUTH_URL}/api/me",
-                             headers={"Authorization": request.headers.get("Authorization", "")},
-                             timeout=TIMEOUT)
-        return jsonify(resp.json()), resp.status_code
-    except requests.exceptions.ConnectionError:
-        return jsonify({"error": "เชื่อมต่อ auth.py ไม่ได้ กรุณาเช็คว่ารันอยู่หรือไม่"}), 502
+    return forward_auth("/api/me", method="GET")
 
 
 @app.route("/api/change-password", methods=["POST"])
 @login_required
 def change_password():
-    data = request.get_json(silent=True) or {}
-    try:
-        resp = requests.post(f"{AUTH_URL}/api/change-password", json=data,
-                              headers={"Authorization": request.headers.get("Authorization", "")},
-                              timeout=TIMEOUT)
-        return jsonify(resp.json()), resp.status_code
-    except requests.exceptions.ConnectionError:
-        return jsonify({"error": "เชื่อมต่อ auth.py ไม่ได้ กรุณาเช็คว่ารันอยู่หรือไม่"}), 502
+    return forward_auth("/api/change-password")
 
 
 # ---------- image routes (ไม่ต้อง login: models) ----------

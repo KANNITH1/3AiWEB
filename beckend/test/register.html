@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครสมาชิก — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .auth-panel { width: 100%; max-width: 400px; text-align: center; }
+    .auth-panel .logo { display: inline-block; margin-bottom: 24px; font-size: 2rem; }
+    .auth-form { text-align: left; }
+    .auth-footer { margin-top: 20px; font-size: 0.85rem; color: var(--dim); text-align: center; }
+    .auth-footer a { color: var(--cyan); text-decoration: none; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+    .auth-error { margin-top: 14px; font-size: 0.85rem; color: #ff6b6b; text-align: center; display: none; }
+    .field-hint { font-size: 0.78rem; color: var(--dim); margin-top: 4px; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="auth-layout">
+    <section class="panel auth-panel">
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <h2 style="margin-bottom: 8px;">สมัครสมาชิก</h2>
+      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
+
+      <form class="auth-form" id="register-form">
+        <div class="field-group">
+          <label for="username">ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="username" class="input-field" placeholder="ชื่อของคุณ" required
+                 pattern="[a-zA-Z0-9_.]{3,32}" title="3-32 ตัวอักษร ใช้ได้แค่ a-z, A-Z, 0-9, _ และ .">
+          <span class="field-hint">3-32 ตัวอักษร ใช้ได้แค่ a-z, A-Z, 0-9, _ และ .</span>
+        </div>
+
+        <div class="field-group">
+          <label for="email">อีเมล (Email)</label>
+          <input type="email" id="email" class="input-field" placeholder="your@email.com" required>
+        </div>
+
+        <div class="field-group">
+          <label for="password">รหัสผ่าน (Password)</label>
+          <input type="password" id="password" class="input-field" placeholder="••••••••" required minlength="8">
+          <span class="field-hint">อย่างน้อย 8 ตัวอักษร</span>
+        </div>
+
+        <button type="submit" class="btn-primary" id="register-btn" style="margin-top: 10px;">
+          ลงทะเบียน
+        </button>
+      </form>
+
+      <p class="auth-error" id="auth-error"></p>
+
+      <div class="auth-footer">
+        มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const form = document.getElementById('register-form');
+    const errorEl = document.getElementById('auth-error');
+    const registerBtn = document.getElementById('register-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      registerBtn.disabled = true;
+      registerBtn.textContent = 'กำลังสมัครสมาชิก...';
+
+      try {
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        await apiRegister(username, password, email);
+        alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+        window.location.href = 'index.html';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'ลงทะเบียน';
+      }
+    });
+  </script>
+</body>
+</html>

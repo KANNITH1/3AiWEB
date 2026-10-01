@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ — Forge AI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .auth-panel { width: 100%; max-width: 400px; text-align: center; }
+    .auth-panel .logo { display: inline-block; margin-bottom: 24px; font-size: 2rem; }
+    .auth-form { text-align: left; }
+    .auth-footer { margin-top: 20px; font-size: 0.85rem; color: var(--dim); text-align: center; }
+    .auth-footer a { color: var(--cyan); text-decoration: none; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+    .auth-error { margin-top: 14px; font-size: 0.85rem; color: #ff6b6b; text-align: center; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="auth-layout">
+    <section class="panel auth-panel">
+      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
+      <h2 style="margin-bottom: 8px;">เข้าสู่ระบบ</h2>
+      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">ยินดีต้อนรับกลับสู่ระบบ</p>
+
+      <form class="auth-form" id="login-form">
+        <div class="field-group">
+          <label for="username">ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="username" class="input-field" placeholder="ชื่อผู้ใช้ของคุณ" required>
+        </div>
+
+        <div class="field-group">
+          <label for="password">รหัสผ่าน (Password)</label>
+          <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-primary" id="login-btn" style="margin-top: 10px;">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <p class="auth-error" id="auth-error"></p>
+
+      <div class="auth-footer">
+        ยังไม่มีบัญชีใช่ไหม? <a href="register.html">สมัครสมาชิก</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const form = document.getElementById('login-form');
+    const errorEl = document.getElementById('auth-error');
+    const loginBtn = document.getElementById('login-btn');
+
+    // ถ้า login ค้างอยู่แล้ว ไม่ต้องให้กลับมาหน้านี้อีก
+    if (getToken()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+
+      try {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const { token, user } = await apiLogin(username, password);
+        saveSession(token, user);
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'เข้าสู่ระบบ';
+      }
+    });
+  </script>
+</body>
+</html>
