@@ -47,6 +47,14 @@
           <span class="field-hint">อย่างน้อย 8 ตัวอักษร</span>
         </div>
 
+        <div class="field-group">
+          <label for="captcha-answer" id="captcha-question">คำถามกันบอท: กำลังโหลด...</label>
+          <input type="text" id="captcha-answer" class="input-field" placeholder="ใส่คำตอบ" required inputmode="numeric">
+          <span class="field-hint">
+            ตอบไม่ได้/หมดอายุ? <a href="#" id="captcha-refresh">ขอโจทย์ใหม่</a>
+          </span>
+        </div>
+
         <button type="submit" class="btn-primary" id="register-btn" style="margin-top: 10px;">
           ลงทะเบียน
         </button>
@@ -65,6 +73,29 @@
     const form = document.getElementById('register-form');
     const errorEl = document.getElementById('auth-error');
     const registerBtn = document.getElementById('register-btn');
+    const captchaQuestionEl = document.getElementById('captcha-question');
+    const captchaAnswerEl = document.getElementById('captcha-answer');
+    const captchaRefreshEl = document.getElementById('captcha-refresh');
+
+    let captchaId = null;
+
+    async function loadCaptcha() {
+      captchaQuestionEl.textContent = 'คำถามกันบอท: กำลังโหลด...';
+      captchaAnswerEl.value = '';
+      try {
+        const { captcha_id, question } = await apiGetCaptcha();
+        captchaId = captcha_id;
+        captchaQuestionEl.textContent = `คำถามกันบอท: ${question}`;
+      } catch (err) {
+        captchaQuestionEl.textContent = 'โหลดคำถามกันบอทไม่สำเร็จ ลองรีเฟรชหน้า';
+      }
+    }
+
+    loadCaptcha();
+    captchaRefreshEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      loadCaptcha();
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -76,7 +107,9 @@
         const username = document.getElementById('username').value.trim();
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
-        await apiRegister(username, password, email);
+        const captchaAnswer = captchaAnswerEl.value.trim();
+
+        await apiRegister(username, password, email, captchaId, captchaAnswer);
         alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
         window.location.href = 'index.html';
       } catch (err) {
@@ -84,6 +117,8 @@
         errorEl.style.display = 'block';
         registerBtn.disabled = false;
         registerBtn.textContent = 'ลงทะเบียน';
+        // captcha ใช้ได้ครั้งเดียว (ถูกหรือผิดก็ตาม) ต้องขอโจทย์ใหม่เสมอ
+        loadCaptcha();
       }
     });
   </script>

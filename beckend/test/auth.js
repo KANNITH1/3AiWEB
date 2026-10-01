@@ -38,11 +38,22 @@ function requireAuth() {
     }
 }
 
-async function apiRegister(username, password, email) {
+async function apiGetCaptcha() {
+    const res = await fetch(`${AUTH_API_BASE}/api/captcha`);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'โหลดคำถามกันบอทไม่สำเร็จ');
+    return data; // { captcha_id, question }
+}
+
+async function apiRegister(username, password, email, captchaId, captchaAnswer) {
     const res = await fetch(`${AUTH_API_BASE}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, email }),
+        body: JSON.stringify({
+            username, password, email,
+            captcha_id: captchaId,
+            captcha_answer: captchaAnswer,
+        }),
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'สมัครสมาชิกไม่สำเร็จ');
