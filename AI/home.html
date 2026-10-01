@@ -55,6 +55,16 @@
             </div>
           </div>
 
+          <div id="lora-group" class="field-group">
+            <label>เลือก LoRA (Style Adjuster)</label>
+            <div class="style-grid" id="lora-grid">
+              <button type="button" class="chip active" data-lora="none">ไม่ใช้ LoRA</button>
+              <button type="button" class="chip" data-lora="ghibli_style_offset">Ghibli Style</button>
+              <button type="button" class="chip" data-lora="add_detail">Add Detail</button>
+              <button type="button" class="chip" data-lora="MitsuArt-000091">MitsuArt</button>
+            </div>
+          </div>
+
           <div id="upload-group" class="field-group hidden">
             <label for="source-image">อัปโหลดภาพต้นฉบับ</label>
             <div class="upload-box" id="upload-box">
@@ -124,6 +134,14 @@
             <textarea id="negative-prompt" class="input-field" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
           </div>
 
+          <div id="seed-group" class="field-group">
+            <label for="seed-input">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
+            <div style="display: flex; gap: 12px;">
+              <input type="number" id="seed-input" class="input-field" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า" style="flex: 1;">
+              <button type="button" id="random-seed-btn" class="btn-secondary">🎲 สุ่มใหม่ (-1)</button>
+            </div>
+          </div>
+
           <button type="submit" class="btn-primary" id="submit-btn">
             <span class="btn-text">สร้างภาพ</span>
             <span class="spinner"></span>
@@ -132,6 +150,7 @@
 
         <div class="image-result-wrapper" id="result" style="display: none;">
           <img class="generated-image" id="result-image" src="" alt="ผลลัพธ์ภาพ AI">
+          <p id="used-seed-text" style="display: none; text-align: center; opacity: .75; margin: 8px 0 0;"></p>
           <div class="result-actions">
             <button class="btn-secondary" id="save-btn" type="button">💾 บันทึกลง Gallery</button>
           </div>
