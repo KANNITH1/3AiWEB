@@ -45,8 +45,8 @@ class ForgeAIController {
             btnRemoveImage: document.getElementById('remove-image-btn')
         };
 
-        // API Endpoint (สามารถเปลี่ยนเป็น IP อื่น หรือ localhost ได้)
-        this.apiEndpoint = 'http://172.20.56.243:5000/api/generate';
+        // API Endpoint (เมื่อใช้ Nginx จะใช้แค่ /api/generate เพื่อให้ Nginx ส่งต่อให้เอง)
+        this.apiEndpoint = '/api/generate';
 
         // 3. Initialize App
         this.initEventListeners();
