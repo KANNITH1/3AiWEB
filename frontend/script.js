@@ -45,12 +45,15 @@ class ForgeAIController {
             btnRemoveImage: document.getElementById('remove-image-btn')
         };
 
+        // API Endpoint (สามารถเปลี่ยนเป็น IP อื่น หรือ localhost ได้)
+        this.apiEndpoint = 'http://172.20.56.243:5000/api/generate';
+
         // 3. Initialize App
         this.initEventListeners();
         this.initImageUpload();
         this.updateUIForMode(this.state.mode); // รันครั้งแรกเพื่อให้หน้าตาถูกตามโหมดเริ่มต้น
         
-        console.log("[Forge AI] ระบบพร้อมใช้งาน เปิดผ่าน Live Server");
+        console.log("[Forge AI] ระบบพร้อมใช้งาน");
     }
 
     /**
@@ -67,7 +70,9 @@ class ForgeAIController {
             });
         }
 
-        this.elements.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        if (this.elements.form) {
+            this.elements.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
     }
 
     /**
@@ -78,6 +83,7 @@ class ForgeAIController {
         buttons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 buttons.forEach(b => b.classList.remove('active'));
+                // ใช้ e.currentTarget เพื่อเอา <button> เสมอ แม้คลิกโดนไอคอนด้านใน
                 const clickedBtn = e.currentTarget;
                 clickedBtn.classList.add('active');
                 
@@ -96,6 +102,7 @@ class ForgeAIController {
      */
     updateUIForMode(mode) {
         // ค่าเริ่มต้นซ่อนทุกอย่างก่อน แล้วค่อยเปิดเฉพาะที่จำเป็น
+        this.elements.groupModel.style.display = 'none';
         this.elements.groupUpload.style.display = 'none';
         this.elements.groupLora.style.display = 'none';
         this.elements.groupPrompts.style.display = 'none';
@@ -103,17 +110,20 @@ class ForgeAIController {
         this.elements.groupSeed.style.display = 'none';
 
         if (mode === 'text2img') {
+            this.elements.groupModel.style.display = 'block';
             this.elements.groupLora.style.display = 'block';
             this.elements.groupPrompts.style.display = 'block';
             this.elements.groupSeed.style.display = 'block';
         } 
         else if (mode === 'img2img') {
+            this.elements.groupModel.style.display = 'block';
             this.elements.groupUpload.style.display = 'block';
             this.elements.groupLora.style.display = 'block';
             this.elements.groupPrompts.style.display = 'block';
             this.elements.groupSeed.style.display = 'block';
         }
         else if (mode === 'blur') {
+            this.elements.groupModel.style.display = 'block';
             this.elements.groupUpload.style.display = 'block';
             this.elements.groupBlur.style.display = 'block';
         }
@@ -136,19 +146,21 @@ class ForgeAIController {
                     this.elements.sourcePreview.src = event.target.result;
                     this.elements.uploadLabel.style.display = 'none';
                     this.elements.previewContainer.style.display = 'block';
+                    // เก็บ Base64 เอาไปใช้งานต่อ
                     this.state.sourceImageBase64 = event.target.result.split(',')[1];
                 };
                 reader.readAsDataURL(file);
             }
         });
 
+        // จัดการปุ่มลบรูปภาพ
         if (this.elements.btnRemoveImage) {
             this.elements.btnRemoveImage.addEventListener('click', () => {
-                this.elements.sourceInput.value = '';
+                this.elements.sourceInput.value = ''; // เคลียร์ไฟล์ เพื่อให้อัปโหลดไฟล์เดิมซ้ำได้
                 this.state.sourceImageBase64 = null;
                 this.elements.sourcePreview.src = '';
                 this.elements.previewContainer.style.display = 'none';
-                this.elements.uploadLabel.style.display = 'flex';
+                this.elements.uploadLabel.style.display = 'flex'; // กลับมาแสดงปุ่มอัปโหลดแบบ Flex ตาม CSS
             });
         }
     }
@@ -177,12 +189,12 @@ class ForgeAIController {
             payload.blur_strength = parseInt(this.elements.blurInput.value, 10) || 15;
         }
 
-        // 3. ตรวจสอบการอัปโหลดรูป
+        // 3. ตรวจสอบการอัปโหลดรูป (ถ้าจำเป็น)
         if (this.state.mode !== 'text2img') {
             if (this.state.sourceImageBase64) {
                 payload.init_image = this.state.sourceImageBase64;
             } else {
-                alert("กรุณาอัปโหลดรูปภาพตั้งต้นก่อนครับ!");
+                alert("กรุณาอัปโหลดรูปภาพต้นฉบับก่อนครับ!");
                 return;
             }
         }
@@ -190,17 +202,14 @@ class ForgeAIController {
         this.setLoadingState(true);
 
         try {
-            // ยิงตรงไป IP ของเพื่อน (เพื่อใช้ Live Server)
-            const backendURL = 'http://172.20.56.243:5000/api/generate';
-            
-            const response = await fetch(backendURL, {
+            const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                throw new Error(`HTTP Error: ${response.status}`);
             }
 
             const data = await response.json();
@@ -208,7 +217,7 @@ class ForgeAIController {
 
         } catch (error) {
             console.error('[Forge AI] Generation Error:', error);
-            alert(`เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}\n(โปรดเช็ค Backend ว่ารันอยู่หรือไม่ หรือติดปัญหา CORS)`);
+            alert(`เกิดข้อผิดพลาด: ${error.message}\n(กรุณาตรวจสอบว่า Backend API รันอยู่หรือไม่)`);
         } finally {
             this.setLoadingState(false);
         }
@@ -218,8 +227,9 @@ class ForgeAIController {
      * จัดการสถานะ UI ระหว่างรอผลลัพธ์ (Loading)
      */
     setLoadingState(isLoading) {
+        if (!this.elements.btnSubmit) return;
         this.elements.btnSubmit.disabled = isLoading;
-        this.elements.btnText.textContent = isLoading ? 'กำลังประมวลผลระบบ AI...' : 'สร้างภาพ';
+        this.elements.btnText.textContent = isLoading ? 'กำลังประมวลผล...' : 'สร้างภาพ';
         this.elements.btnLoader.style.display = isLoading ? 'inline-block' : 'none';
     }
 
@@ -251,5 +261,8 @@ class ForgeAIController {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new ForgeAIController();
+    // โหลดเฉพาะในหน้าที่มี form generate
+    if (document.getElementById('generate-form')) {
+        new ForgeAIController();
+    }
 });
