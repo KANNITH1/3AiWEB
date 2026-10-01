@@ -19,6 +19,7 @@ Endpoints:
 
 import base64
 import io
+import json
 
 import cv2
 import numpy as np
@@ -121,6 +122,26 @@ def call_forge(endpoint, payload):
         return None, (jsonify({"error": str(e)}), 500)
 
 
+def get_used_seed(result, fallback=-1):
+    """Forge คืน seed จริงที่ใช้ใน result['info'] (เป็น JSON string)"""
+    try:
+        return json.loads(result.get("info", "{}")).get("seed", fallback)
+    except Exception:
+        return fallback
+
+
+def dispatch_mode(mode, data):
+    """รองรับ payload เดิมของหน้าเว็บ: ทุกโหมดยิงมาที่ /api/generate พร้อมฟิลด์ mode"""
+    handlers = {"img2img": img2img, "blur": blur, "canny": canny, "detection": detect}
+    handler = handlers.get(mode)
+    if not handler:
+        return jsonify({"error": f"ไม่รองรับ mode: {mode}"}), 400
+    data["image"] = data.get("image") or data.get("init_image")  # หน้าเว็บส่งชื่อ init_image
+    if mode == "blur":
+        data["strength"] = data.get("blur_strength", 15)         # หน้าเว็บส่งชื่อ blur_strength
+    return handler(data)
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
@@ -147,6 +168,9 @@ def get_models():
 @app.route("/api/generate", methods=["POST"])
 def generate():
     data = request.get_json(silent=True) or {}
+    mode = data.get("mode", "text2img")
+    if mode != "text2img":
+        return dispatch_mode(mode, data)
     prompt = data.get("prompt")
     style = data.get("style", "realistic")
 
@@ -157,6 +181,7 @@ def generate():
         "prompt": build_prompt(prompt, style),
         "negative_prompt": data.get("negative_prompt", ""),
         "steps": 20,
+        "seed": int(data.get("seed", -1)),
         "width": 1024,
         "height": 1024,
     }, data.get("model"))
@@ -170,12 +195,15 @@ def generate():
         return jsonify({"error": "Forge Neo ไม่คืนภาพกลับมา"}), 502
 
     # ส่งกลับเป็น Data URL ตามที่ script.js คาดหวัง
-    return jsonify({"image_url": f"data:image/png;base64,{images[0]}"})
+    return jsonify({
+        "image_url": f"data:image/png;base64,{images[0]}",
+        "seed": get_used_seed(result, data.get("seed", -1)),
+    })
 
 
 @app.route("/api/img2img", methods=["POST"])
-def img2img():
-    data = request.get_json(silent=True) or {}
+def img2img(data=None):
+    data = data if data is not None else (request.get_json(silent=True) or {})
     prompt = data.get("prompt")
     style = data.get("style", "realistic")
     image = data.get("image")
@@ -197,6 +225,7 @@ def img2img():
         "negative_prompt": data.get("negative_prompt", ""),
         "denoising_strength": strength,
         "steps": 20,
+        "seed": int(data.get("seed", -1)),
         "width": width,
         "height": height,
     }, data.get("model"))
@@ -209,7 +238,10 @@ def img2img():
     if not images:
         return jsonify({"error": "Forge Neo ไม่คืนภาพกลับมา"}), 502
 
-    return jsonify({"image_url": f"data:image/png;base64,{images[0]}"})
+    return jsonify({
+        "image_url": f"data:image/png;base64,{images[0]}",
+        "seed": get_used_seed(result, data.get("seed", -1)),
+    })
 
 
 @app.route("/api/upscale", methods=["POST"])
@@ -237,9 +269,9 @@ def upscale():
 
 
 @app.route("/api/blur", methods=["POST"])
-def blur():
+def blur(data=None):
     """เบลอภาพด้วย OpenCV (ไม่ผ่าน Forge)"""
-    data = request.get_json(silent=True) or {}
+    data = data if data is not None else (request.get_json(silent=True) or {})
     if not data.get("image"):
         return jsonify({"error": "missing 'image'"}), 400
     try:
@@ -251,9 +283,9 @@ def blur():
 
 
 @app.route("/api/canny", methods=["POST"])
-def canny():
+def canny(data=None):
     """หาเส้นขอบภาพด้วย Canny (OpenCV, ไม่ผ่าน Forge)"""
-    data = request.get_json(silent=True) or {}
+    data = data if data is not None else (request.get_json(silent=True) or {})
     if not data.get("image"):
         return jsonify({"error": "missing 'image'"}), 400
     try:
@@ -261,6 +293,39 @@ def canny():
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, int(data.get("low", 100)), int(data.get("high", 200)))
         return jsonify({"image_url": cv_to_data_url(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+_yolo = None
+
+
+def get_yolo():
+    """โหลด YOLO ครั้งแรกที่ใช้งาน (ดาวน์โหลด yolov8n.pt อัตโนมัติ ~6MB)"""
+    global _yolo
+    if _yolo is None:
+        from ultralytics import YOLO
+        _yolo = YOLO("yolov8n.pt")
+    return _yolo
+
+
+@app.route("/api/detect", methods=["POST"])
+def detect(data=None):
+    """ตรวจจับวัตถุด้วย YOLO แล้ววาดกรอบบนภาพ (ไม่ผ่าน Forge)"""
+    data = data if data is not None else (request.get_json(silent=True) or {})
+    if not data.get("image"):
+        return jsonify({"error": "missing 'image'"}), 400
+    try:
+        img = data_url_to_cv(data["image"])
+        result = get_yolo()(img, conf=float(data.get("conf", 0.25)),
+                              max_det=int(data.get("max_results", 300)), verbose=False)[0]
+        counts = {}
+        for cls in result.boxes.cls:
+            name = result.names[int(cls)]
+            counts[name] = counts.get(name, 0) + 1
+        return jsonify({"image_url": cv_to_data_url(result.plot()), "objects": counts})
+    except ImportError:
+        return jsonify({"error": "ยังไม่ได้ติดตั้ง ultralytics กรุณารัน: pip install ultralytics"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

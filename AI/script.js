@@ -3,9 +3,10 @@
 //    Browser → server.py (5000) → chat.py (5002) → Forge Neo (7860)
 //    หน้าเว็บคุยกับ server.py ที่เดียวเท่านั้น (server.py ส่งต่อให้ chat.py เอง)
 // ----------------------------------------------------
-const API_BASE = 'http://172.20.56.243:5000';   // server.py
+const API_BASE = 'http://127.0.0.1:5000';   // server.py
 
 let selectedModel = null; // เก็บ title ของโมเดลที่ผู้ใช้เลือกอยู่
+let selectedLora = 'none'; // เก็บชื่อไฟล์ LoRA ที่เลือก (none = ไม่ใช้)
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -16,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const uiGroups = {
         model: document.getElementById('model-group'),
+        lora: document.getElementById('lora-group'),
+        seed: document.getElementById('seed-group'),
         upload: document.getElementById('upload-group'),
         strength: document.getElementById('strength-group'),
         prompt: document.getElementById('prompt-group'),
@@ -56,11 +59,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (mode === 'text2img') {
                     if (uiGroups.model) uiGroups.model.classList.remove('hidden');
+                    if (uiGroups.lora) uiGroups.lora.classList.remove('hidden');
+                    if (uiGroups.seed) uiGroups.seed.classList.remove('hidden');
                     if (uiGroups.prompt) uiGroups.prompt.classList.remove('hidden');
                     if (uiGroups.negativePrompt) uiGroups.negativePrompt.classList.remove('hidden');
                 }
                 else if (mode === 'img2img') {
                     if (uiGroups.model) uiGroups.model.classList.remove('hidden');
+                    if (uiGroups.lora) uiGroups.lora.classList.remove('hidden');
+                    if (uiGroups.seed) uiGroups.seed.classList.remove('hidden');
                     if (uiGroups.upload) uiGroups.upload.classList.remove('hidden');
                     if (uiGroups.strength) uiGroups.strength.classList.remove('hidden');
                     if (uiGroups.prompt) uiGroups.prompt.classList.remove('hidden');
@@ -142,6 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadModels();
+
+    // ปุ่มเลือก LoRA
+    setupChipSelection('#lora-grid .chip', (chip) => {
+        selectedLora = chip.dataset.lora;
+    });
 
     // ----------------------------------------------------
     // 2.2 ระบบอัปโหลดภาพ (คลิกเลือกไฟล์ + ลากมาวาง + แสดง preview)
@@ -279,6 +291,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const cannyLowInput = document.getElementById('canny-low');
     const cannyHighInput = document.getElementById('canny-high');
 
+    const seedInput = document.getElementById('seed-input');
+    const randomSeedBtn = document.getElementById('random-seed-btn');
+    if (randomSeedBtn && seedInput) {
+        randomSeedBtn.addEventListener('click', () => { seedInput.value = -1; });
+    }
+
+    // รวม Prompt + แท็ก LoRA เช่น "a girl <lora:ghibli_style_offset:1>"
+    function buildPrompt() {
+        let p = promptInput.value.trim();
+        if (selectedLora !== 'none') p += ` <lora:${selectedLora}:1>`;
+        return p;
+    }
+
+    // seed = 0 ต้องใช้ได้ (ว่าง/ไม่ใช่ตัวเลข = -1 สุ่ม)
+    function getSeed() {
+        const v = parseInt(seedInput ? seedInput.value : '', 10);
+        return Number.isNaN(v) ? -1 : v;
+    }
+
     if (generateForm) {
         generateForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -310,7 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            prompt: promptInput.value.trim(),
+                            prompt: buildPrompt(),
+                            style: 'none',   // ไม่ให้ chat.py เติม suffix สไตล์เอง
+                            seed: getSeed(),
                             negative_prompt: negativePrompt,
                             model: selectedModel,
                         }),
@@ -326,7 +359,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            prompt: promptInput.value.trim(),
+                            prompt: buildPrompt(),
+                            style: 'none',   // ไม่ให้ chat.py เติม suffix สไตล์เอง
+                            seed: getSeed(),
                             negative_prompt: negativePrompt,
                             image: uploadPreview.src,
                             model: selectedModel,
@@ -380,6 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 resultImage.src = data.image_url;
+
+                // แสดง Seed ที่ใช้จริง (เฉพาะโหมดสร้างภาพ) เอาไปใส่ช่อง Seed เพื่อสร้างภาพซ้ำได้
+                const usedSeedText = document.getElementById('used-seed-text');
+                if (usedSeedText) {
+                    const hasSeed = (currentMode === 'text2img' || currentMode === 'img2img') && data.seed !== undefined;
+                    usedSeedText.textContent = hasSeed ? `Seed ที่ใช้: ${data.seed}` : '';
+                    usedSeedText.style.display = hasSeed ? 'block' : 'none';
+                }
                 resultWrapper.style.display = 'block';
                 showToast('✅ สร้างภาพสำเร็จ');
 

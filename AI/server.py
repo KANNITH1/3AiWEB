@@ -23,10 +23,27 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
+
+# ---- เพิ่มเติม: จัดการ CORS preflight เอง (กันกรณี OPTIONS ไม่ได้ status 200) ----
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        resp = app.make_default_options_response()
+        resp.status_code = 200
+        return resp
+
+
+@app.after_request
+def add_cors_headers(resp):
+    resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
+
 CHAT_URL = "http://127.0.0.1:5002"   # ถ้า chat.py อยู่คนละเครื่อง ให้เปลี่ยน IP
 TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) ใน chat.py
 
-# field ที่ต้องมีในแต่ละ endpoint (POST)
+# field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
 REQUIRED = {
     "/api/generate": ["prompt"],
     "/api/img2img": ["prompt", "image"],
@@ -44,7 +61,12 @@ def forward(path, method="POST"):
         if not isinstance(data, dict):
             return jsonify({"error": "invalid JSON body"}), 400
 
-        for field in REQUIRED.get(path, []):
+        fields = REQUIRED.get(path, [])
+        # /api/generate ที่ mode ไม่ใช่ text2img (blur/canny/detection ไม่มี prompt) ต้องมีรูป init_image แทน
+        if path == "/api/generate" and data.get("mode", "text2img") != "text2img":
+            fields = ["init_image"]
+
+        for field in fields:
             if not data.get(field):
                 return jsonify({"error": f"missing '{field}'"}), 400
 
