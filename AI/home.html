@@ -1,168 +1,201 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home — Forge AI</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forge AI - Image Engine</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
-
-  <div class="layout">
-
-    <aside class="sidebar">
-      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <nav>
-        <a href="dashboard.html" class="nav-item">📊 ภาพรวมระบบ</a>
-        <a href="home.html" class="nav-item active">🎨 สร้างภาพ</a>
-        <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      </nav>
-      
-      <!-- Profile Section -->
-      <div class="sidebar-profile">
-          <div class="profile-info">
-              <span class="profile-name">Kannithi Promtong</span>
-              <span class="profile-role">Student ID: 6710301041</span>
-          </div>
-          <button class="logout-btn" onclick="logout()" title="ออกจากระบบ">🚪</button>
-      </div>
-    </aside>
-
-    <main class="main-content">
-      <span class="eyebrow">AI IMAGE ENGINE</span>
-      <h1>AI Image <span class="grad-text">Engine</span></h1>
-      <p class="subtitle">เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
-
-      <section class="panel">
-
-        <div class="mode-tabs" id="mode-tabs">
-          <button type="button" class="mode-tab active" data-mode="text2img">✍️ Text to Image</button>
-          <button type="button" class="mode-tab" data-mode="img2img">🖌️ Image to Image</button>
-          <button type="button" class="mode-tab" data-mode="blur">💧 Blur</button>
-          <button type="button" class="mode-tab" data-mode="canny">✏️ Canny</button>
-          <button type="button" class="mode-tab" data-mode="objects">📦 Objects Detection</button>
-        </div>
-
-        <form id="generate-form">
-          <div id="model-group" class="field-group">
-            <label>เลือกโมเดล</label>
-            <div class="style-grid" id="model-grid">
-              <span class="model-loading">กำลังโหลดรายชื่อโมเดล...</span>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>Forge <span>AI</span></h1>
             </div>
-          </div>
-
-          <div id="lora-group" class="field-group">
-            <label>เลือก LoRA (Style Adjuster)</label>
-            <div class="style-grid" id="lora-grid">
-              <button type="button" class="chip active" data-lora="none">ไม่ใช้ LoRA</button>
-              <button type="button" class="chip" data-lora="ghibli_style_offset">Ghibli Style</button>
-              <button type="button" class="chip" data-lora="add_detail">Add Detail</button>
-              <button type="button" class="chip" data-lora="MitsuArt-000091">MitsuArt</button>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>ภาพรวมระบบ</span></a>
+                <a href="home.html" class="nav-item active"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
+                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="about.html" class="nav-item"><span class="icon">ℹ️</span><span>เกี่ยวกับ</span></a>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar-placeholder">KP</div>
+                <div class="user-info">
+                    <span class="user-name">Kannithi Promtong</span>
+                    <span class="user-id">Student ID: 6710301041</span>
+                </div>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ">
+                    <span class="icon">🚪</span>
+                </a>
             </div>
-          </div>
+        </aside>
 
-          <div id="upload-group" class="field-group hidden">
-            <label for="source-image">อัปโหลดภาพต้นฉบับ</label>
-            <div class="upload-box" id="upload-box">
-              <input type="file" id="source-image" accept="image/*" hidden>
-              <div id="upload-placeholder">
-                <span class="upload-icon">📤</span>
-                <span>คลิกเพื่อเลือกภาพ หรือลากมาวางตรงนี้</span>
-              </div>
-              <img id="upload-preview" alt="ภาพที่อัปโหลด">
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <header class="page-header">
+                <span class="badge-subtitle">AI IMAGE ENGINE</span>
+                <h2>AI Image <span class="highlight">Engine</span></h2>
+                <p>เลือกโหมดที่ต้องการ แล้วปล่อยให้ Forge AI สร้างสรรค์ให้คุณ</p>
+            </header>
+
+            <div class="content-container">
+                <!-- Operation Modes (Full Width) -->
+                <div class="mode-tabs" id="mode-selector">
+                    <button type="button" class="mode-tab active" data-mode="text2img"><span class="tab-icon">⚡</span> Text to Image</button>
+                    <button type="button" class="mode-tab" data-mode="img2img"><span class="tab-icon">🖌️</span> Image to Image</button>
+                    <button type="button" class="mode-tab" data-mode="blur"><span class="tab-icon">💧</span> Blur</button>
+                    <button type="button" class="mode-tab" data-mode="canny"><span class="tab-icon">✏️</span> Canny</button>
+                    <button type="button" class="mode-tab" data-mode="detection"><span class="tab-icon">📦</span> Objects Detection</button>
+                </div>
+
+                <div class="two-column-layout">
+                    <div class="left-panel">
+                        <!-- Generation Form -->
+                    <div class="form-card">
+                        <form id="generate-form">
+                            <!-- 1. ส่วนเลือก Model -->
+                            <div class="form-group" id="group-model">
+                                <label class="group-label">เลือกโมเดล (Base Model)</label>
+                                <div class="btn-selector-group" id="model-selector">
+                                    <button type="button" class="pill-btn model-btn active" data-value="sd_counterfeitV30_v30">sd_counterfeitV30_v30</button>
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_manmaruMix_v30">sd_manmaruMix_v30</button>
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button>
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_AnythingXL_xl">sd_AnythingXL_xl</button>
+                                </div>
+                            </div>
+
+                            <!-- 2. ส่วนเลือก LoRA -->
+                            <div class="form-group" id="group-lora">
+                                <label class="group-label">เลือก LoRA (Style Adjuster)</label>
+                                <div class="btn-selector-group" id="lora-selector">
+                                    <button type="button" class="pill-btn lora-btn active" data-value="none">ไม่ใช้ LoRA</button>
+                                    <button type="button" class="pill-btn lora-btn" data-value="detail_tweaker">Detail Tweaker</button>
+                                    <button type="button" class="pill-btn lora-btn" data-value="anime_lineart">Anime Lineart</button>
+                                    <button type="button" class="pill-btn lora-btn" data-value="flat_colour">Flat Colour</button>
+                                </div>
+                            </div>
+
+                            <!-- 3. ส่วนอัปโหลดรูปภาพ -->
+                            <div class="form-group" id="group-upload" style="display: none;">
+                                <label class="group-label">อัปโหลดภาพต้นฉบับ</label>
+                                <div class="upload-area" id="upload-area">
+                                    <input type="file" id="source-image-input" accept="image/*" hidden>
+                                    <label for="source-image-input" class="upload-label" id="upload-label">
+                                        <span class="upload-icon">📤</span>
+                                        <span class="upload-text">คลิกเพื่ออัปโหลดรูปภาพที่นี่</span>
+                                    </label>
+                                    <div id="image-preview-container" style="display: none; position: relative; text-align: center;">
+                                        <img id="source-image-preview" src="" alt="Preview">
+                                        <button type="button" id="remove-image-btn" class="remove-btn">✕ ลบรูปภาพ</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. ส่วน Prompt -->
+                            <div id="group-prompts">
+                                <div class="form-group">
+                                    <label for="prompt-input" class="group-label">Prompt (คำอธิบายภาพ)</label>
+                                    <textarea id="prompt-input" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="negative-prompt-input" class="group-label">Negative Prompt (สิ่งที่ไม่ต้องการในภาพ)</label>
+                                    <textarea id="negative-prompt-input" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- 5. ส่วน Blur Strength -->
+                            <div class="form-group" id="group-blur-strength" style="display: none;">
+                                <label for="blur-input" class="group-label">Blur strength (ระดับความเบลอ)</label>
+                                <input type="number" id="blur-input" value="15" min="1" max="100">
+                            </div>
+
+                            <!-- 5.0 ส่วน Strength (Image to Image) -->
+                            <div class="form-group" id="group-strength" style="display: none;">
+                                <label class="group-label">ความแรงในการเปลี่ยนภาพ (Denoising Strength): <span id="strength-val">0.60</span></label>
+                                <input type="range" id="strength-input" class="form-range" min="0.1" max="1.0" step="0.05" value="0.6" oninput="document.getElementById('strength-val').innerText = parseFloat(this.value).toFixed(2)" style="width: 100%;">
+                            </div>
+
+                            <!-- 5.1 ส่วน Canny -->
+                            <div id="group-canny" style="display: none;">
+                                <div style="display: flex; gap: 20px;">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="canny-low" class="group-label">Threshold Low</label>
+                                        <input type="number" id="canny-low" value="100">
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="canny-high" class="group-label">Threshold High</label>
+                                        <input type="number" id="canny-high" value="200">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5.2 ส่วน Object Detection -->
+                            <div id="group-detection" style="display: none;">
+                                <div class="form-group">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <label class="group-label">ความแม่นยำในการตรวจจับ (Score Threshold): <span id="score-threshold-val">0.50</span></label>
+                                    </div>
+                                    <input type="range" id="score-threshold-input" class="form-range" min="0.1" max="1.0" step="0.05" value="0.5" oninput="document.getElementById('score-threshold-val').innerText = parseFloat(this.value).toFixed(2)" style="width: 100%;">
+                                </div>
+                            </div>
+
+                            <!-- 6. ส่วนสัดส่วนภาพ (Aspect Ratio) -->
+                            <div class="form-group" id="group-aspect" style="display: none;">
+                                <label for="aspect-input" class="group-label">สัดส่วนภาพ (Aspect Ratio)</label>
+                                <select id="aspect-input" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); font-size: 14px; outline: none;">
+                                    <option value="1:1">1:1 (จัตุรัส)</option>
+                                    <option value="16:9">16:9 (แนวนอน)</option>
+                                    <option value="9:16">9:16 (แนวตั้ง)</option>
+                                </select>
+                            </div>
+
+                            <!-- 7. ส่วน Seed -->
+                            <div class="form-group" id="group-seed">
+                                <label for="seed-input" class="group-label">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
+                                <div class="seed-input-wrapper" style="display: flex; gap: 10px;">
+                                    <input type="number" id="seed-input" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า" style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg);">
+                                    <button type="button" id="random-seed-btn" class="secondary-btn">🎲 สุ่มใหม่</button>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="submit-btn" class="primary-btn">
+                                <span id="btn-text">สร้างภาพ</span>
+                                <div id="btn-loader" class="loader" style="display: none;"></div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <!-- Result Output -->
+                    <div id="result-container" class="form-card result-container" style="padding: 24px;">
+                        <div class="image-box" style="position: relative; min-height: 450px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 20px; transition: 0.3s ease;">
+                            <div id="placeholder-content" style="color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1;">
+                                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                  <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                <span id="placeholder-text" style="font-size: 15px; font-weight: 500; letter-spacing: 0.5px;">ภาพผลลัพธ์จะปรากฏที่นี่</span>
+                            </div>
+                            <img id="output-image" src="" alt="AI Generated Output" style="display: none; width: 100%; height: auto; max-height: 600px; object-fit: contain; position: relative; z-index: 2; border-radius: 18px;">
+                            <div id="result-actions" style="display: none; gap: 12px; position: absolute; bottom: 20px; right: 20px; z-index: 3;">
+                                <a id="download-btn" href="#" download="forge_ai_image.png" title="ดาวน์โหลดรูปลงเครื่อง" style="display: flex; width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; text-decoration: none; align-items: center; justify-content: center; transition: 0.2s ease;">📥</a>
+                                <button type="button" id="like-btn" title="บันทึกลงแกลเลอรี่" style="display: flex; width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; cursor: pointer; transition: 0.2s ease; align-items: center; justify-content: center;">🤍</button>
+                            </div>
+                        </div>
+                        <p class="seed-used-text" id="seed-display-text" style="display: none; margin-top: 15px;">Seed ที่ใช้: <span id="used-seed-display">-</span></p>
+                        <p class="seed-used-text" id="detect-result-text" style="display: none; margin-top: 15px;"></p>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div id="blur-group" class="field-group hidden">
-            <label for="blur-strength">Blur strength (ระดับความเบลอ)</label>
-            <input type="number" id="blur-strength" class="input-field" value="15" min="1" max="100">
-          </div>
-
-          <div id="canny-group" class="field-group hidden">
-            <div style="display: flex; gap: 16px;">
-              <div style="flex: 1;">
-                <label for="canny-low">Threshold Low</label>
-                <input type="number" id="canny-low" class="input-field" value="100" min="0" max="255">
-              </div>
-              <div style="flex: 1;">
-                <label for="canny-high">Threshold High</label>
-                <input type="number" id="canny-high" class="input-field" value="200" min="0" max="255">
-              </div>
-            </div>
-          </div>
-
-          <div id="objects-group" class="field-group hidden">
-            <label>ตั้งค่าการตรวจจับวัตถุ (Object Detection)</label>
-            <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-              <div style="flex: 1;">
-                <label for="objects-model" style="font-weight:400; font-size:0.85rem;">โมเดล</label>
-                <select id="objects-model" class="input-field">
-                  <option value="efficientdet_lite0">EfficientDet-Lite0 (เร็ว)</option>
-                  <option value="efficientdet_lite2">EfficientDet-Lite2 (แม่นยำกว่า)</option>
-                </select>
-              </div>
-              <div style="flex: 1;">
-                <label for="objects-delegate" style="font-weight:400; font-size:0.85rem;">Hardware</label>
-                <select id="objects-delegate" class="input-field">
-                  <option value="GPU">GPU Accelerated</option>
-                  <option value="CPU">CPU Only</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-bottom: 12px;">
-              <label for="objects-max-results" style="font-weight:400; font-size:0.85rem;">Max Results: <span id="objects-max-results-val">3</span></label>
-              <input type="range" id="objects-max-results" min="1" max="10" step="1" value="3" style="width:100%;">
-            </div>
-            <div>
-              <label for="objects-threshold" style="font-weight:400; font-size:0.85rem;">Score Threshold: <span id="objects-threshold-val">0.50</span></label>
-              <input type="range" id="objects-threshold" min="0.1" max="0.9" step="0.05" value="0.5" style="width:100%;">
-            </div>
-          </div>
-
-          <div id="prompt-group" class="field-group">
-            <label for="prompt">Prompt (คำอธิบายภาพ)</label>
-            <textarea id="prompt" class="input-field" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
-          </div>
-
-          <!-- เพิ่ม Negative Prompt ตรงนี้ -->
-          <div id="negative-prompt-group" class="field-group">
-            <label for="negative-prompt">Negative Prompt (สิ่งที่ไม่ต้องการในภาพ)</label>
-            <textarea id="negative-prompt" class="input-field" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
-          </div>
-
-          <div id="seed-group" class="field-group">
-            <label for="seed-input">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
-            <div style="display: flex; gap: 12px;">
-              <input type="number" id="seed-input" class="input-field" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า" style="flex: 1;">
-              <button type="button" id="random-seed-btn" class="btn-secondary">🎲 สุ่มใหม่ (-1)</button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-primary" id="submit-btn">
-            <span class="btn-text">สร้างภาพ</span>
-            <span class="spinner"></span>
-          </button>
-        </form>
-
-        <div class="image-result-wrapper" id="result" style="display: none;">
-          <img class="generated-image" id="result-image" src="" alt="ผลลัพธ์ภาพ AI">
-          <p id="used-seed-text" style="display: none; text-align: center; opacity: .75; margin: 8px 0 0;"></p>
-          <div class="result-actions">
-            <button class="btn-secondary" id="save-btn" type="button">💾 บันทึกลง Gallery</button>
-          </div>
-        </div>
-
-      </section>
-    </main>
-  </div>
-
-  <div class="toast-container" id="toast-container"></div>
-
-  <script type="module" src="object-detector-module.js"></script>
-  <script src="script.js"></script>
+        </main>
+    </div>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

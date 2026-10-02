@@ -1,34 +1,88 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gallery — Forge AI</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Forge AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
-  <div class="layout">
-    <aside class="sidebar">
-      <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <nav>
-        <a href="dashboard.html" class="nav-item">👥 บัญชีของฉัน</a>
-        <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-        <a href="gallery.html" class="nav-item active">🖼️ แกลเลอรี่</a>
-        <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
-      </nav>
-      <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
-    </aside>
-    <main class="main-content">
-      <h2 class="section-title">Gallery</h2>
-      <p class="section-subtitle">ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้</p>
-      <div id="gallery-grid" class="gallery-grid">
-        <p class="empty-state">ยังไม่มีภาพที่บันทึกไว้ — ลองสร้างภาพแล้วกด "บันทึกลง Gallery" ดูสิ</p>
-      </div>
-    </main>
-  </div>
-  <div class="toast-container" id="toast-container"></div>
-  <script src="script.js"></script>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="brand"><h1>Forge <span>AI</span></h1></div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>ภาพรวมระบบ</span></a>
+                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
+                <a href="gallery.html" class="nav-item active"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="about.html" class="nav-item"><span class="icon">ℹ️</span><span>เกี่ยวกับ</span></a>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar-placeholder">KP</div>
+                <div class="user-info">
+                    <span class="user-name">Kannithi Promtong</span>
+                    <span class="user-id">Student ID: 6710301041</span>
+                </div>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <span class="badge-subtitle">MY GALLERY</span>
+                <h2>Image <span class="highlight">Gallery</span></h2>
+                <p>ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้</p>
+            </header>
+            <div class="content-container" id="gallery-container"></div>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        const KEY = 'forgeAIGallery';
+        const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+
+        function render() {
+            const container = document.getElementById('gallery-container');
+            const gallery = load();
+
+            if (gallery.length === 0) {
+                container.innerHTML = `
+                    <div class="form-card" style="text-align:center; padding:60px 20px;">
+                        <span style="font-size:40px; margin-bottom:15px; display:block;">📂</span>
+                        <h3 style="margin-bottom:10px;">ยังไม่มีภาพที่บันทึกไว้</h3>
+                        <p style="color:var(--c-text-mut); font-size:14px;">ภาพที่คุณกดถูกใจ (🤍) ในหน้า "สร้างภาพ" จะมาปรากฏที่นี่</p>
+                        <br>
+                        <a href="home.html" class="secondary-btn" style="text-decoration:none; padding:10px 20px; display:inline-block;">กลับไปสร้างภาพ</a>
+                    </div>`;
+                return;
+            }
+
+            let html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;">';
+            gallery.map((img, i) => ({ img, i })).reverse().forEach(({ img, i }) => {
+                html += `
+                    <div class="form-card" style="padding:15px; text-align:center; position:relative;">
+                        <button class="remove-btn" style="top:22px; right:22px; padding:4px 10px;" onclick="removeImage(${i})" title="ลบรูปนี้">✕</button>
+                        <img src="${img.src}" style="width:100%; border-radius:12px; object-fit:contain; margin-bottom:10px; border:1px solid var(--c-border);">
+                        <div style="font-size:12px; color:var(--c-text-mut); display:flex; justify-content:space-between;">
+                            <span>โหมด: ${String(img.mode).toUpperCase()}</span>
+                            <span>${img.date}</span>
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html + '</div>';
+        }
+
+        function removeImage(index) {
+            if (!confirm('ลบรูปนี้ออกจากแกลเลอรี่?')) return;
+            const gallery = load();
+            gallery.splice(index, 1);
+            localStorage.setItem(KEY, JSON.stringify(gallery));
+            render();
+        }
+
+        document.addEventListener('DOMContentLoaded', render);
+    </script>
 </body>
 </html>

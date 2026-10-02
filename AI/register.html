@@ -6,43 +6,43 @@
   <title>สมัครสมาชิก — Forge AI</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-    .auth-panel { width: 100%; max-width: 400px; text-align: center; }
-    .auth-panel .logo { display: inline-block; margin-bottom: 24px; font-size: 2rem; }
-    .auth-form { text-align: left; }
-    .auth-footer { margin-top: 20px; font-size: 0.85rem; color: var(--dim); text-align: center; }
-    .auth-footer a { color: var(--cyan); text-decoration: none; font-weight: 600; }
-    .auth-footer a:hover { text-decoration: underline; }
+    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; padding: 20px; background: var(--c-bg); }
+    .auth-card { width: 100%; max-width: 420px; text-align: center; }
+    .brand { margin-bottom: 10px; }
+    .brand h1 { font-size: 36px; font-weight: 700; color: var(--primary); }
+    .brand h1 span { color: #f97316; }
+    .auth-footer { margin-top: 25px; font-size: 14px; color: var(--c-text-mut); text-align: center; }
+    .auth-footer a { color: var(--primary); text-decoration: none; font-weight: 600; transition: 0.2s; }
+    .auth-footer a:hover { color: #ea580c; }
   </style>
 </head>
 <body>
 
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
-
   <div class="auth-layout">
-    <section class="panel auth-panel">
-      <a href="index.html" class="logo">Forge <span class="grad-text">AI</span></a>
-      <h2 style="margin-bottom: 8px;">สมัครสมาชิก</h2>
-      <p class="subtitle" style="margin-bottom: 24px; text-align: center;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
+    <div class="form-card auth-card">
+      <div class="brand">
+          <h1>Forge <span>AI</span></h1>
+      </div>
+      <h2 style="margin-bottom: 8px; font-size: 24px; font-weight: 600;">สมัครสมาชิก</h2>
+      <p style="margin-bottom: 24px; color: var(--c-text-mut); font-size: 14px;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
 
-      <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
-        <div class="field-group">
-          <label for="username">ชื่อผู้ใช้ (Username)</label>
-          <input type="text" id="username" class="input-field" placeholder="ชื่อของคุณ" required>
+      <form id="register-form" onsubmit="handleRegister(event)" style="text-align: left;">
+        <div class="form-group">
+          <label for="username" class="group-label">ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="username" placeholder="ชื่อของคุณ" required>
         </div>
 
-        <div class="field-group">
-          <label for="email">อีเมล (Email)</label>
-          <input type="email" id="email" class="input-field" placeholder="your@email.com" required>
+        <div class="form-group">
+          <label for="email" class="group-label">อีเมล (Email)</label>
+          <input type="email" id="email" placeholder="your@email.com" required>
         </div>
 
-        <div class="field-group">
-          <label for="password">รหัสผ่าน (Password)</label>
-          <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+        <div class="form-group">
+          <label for="password" class="group-label">รหัสผ่าน (Password)</label>
+          <input type="password" id="password" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" class="btn-primary" style="margin-top: 10px;">
+        <button type="submit" class="primary-btn" style="margin-top: 10px;">
           ลงทะเบียน
         </button>
       </form>
@@ -50,15 +50,34 @@
       <div class="auth-footer">
         มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a>
       </div>
-    </section>
+    </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="config.js"></script>
   <script>
-    function handleRegister(e) {
-      e.preventDefault(); 
-      alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
-      window.location.href = 'index.html'; 
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        const res = await fetch(API_BASE + '/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'สมัครสมาชิกไม่สำเร็จ');
+        alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+        window.location.href = 'index.html';
+      } catch (err) {
+        alert(err instanceof TypeError ? 'ไม่สามารถเชื่อมต่อ Backend ได้ (server.py ปิดอยู่)' : err.message);
+      } finally {
+        btn.disabled = false;
+      }
     }
   </script>
 </body>

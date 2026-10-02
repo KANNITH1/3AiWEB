@@ -34,12 +34,8 @@ CORS(app)
 # เปลี่ยน IP เป็นเครื่องที่รัน Forge Neo หากรันแยกเครื่อง (เช่น "http://192.168.1.30:7860")
 FORGE_URL = "http://127.0.0.1:7860"
 
-STYLE_SUFFIX = {
-    "realistic": ", photorealistic, highly detailed, sharp focus, 8k",
-    "anime": ", anime style, vibrant colors, cel shading",
-    "cyberpunk": ", cyberpunk style, neon lights, futuristic city",
-    "oil-painting": ", oil painting, visible brush strokes, classical art style",
-}
+# ถ้าต้องการเพิ่ม suffix พิเศษตามโหมด สามารถเพิ่มได้ที่นี่
+# แต่ใน UI ใหม่เปลี่ยนเป็นใช้ Lora (Style Adjuster) แทน
 
 GEN_TIMEOUT = 180  # วินาที รอผลสร้างภาพจาก Forge Neo
 
@@ -47,9 +43,19 @@ GEN_TIMEOUT = 180  # วินาที รอผลสร้างภาพจ�
 UPSCALER = "R-ESRGAN 4x+"
 
 
-def build_prompt(prompt, style):
-    suffix = STYLE_SUFFIX.get(style, "")
-    return f"{prompt}{suffix}"
+# ขนาดภาพตามสัดส่วนที่เลือกในหน้าเว็บ (กว้าง, สูง)
+ASPECTS = {"1:1": (1024, 1024), "16:9": (1344, 768), "9:16": (768, 1344)}
+
+
+def aspect_size(ratio):
+    w, h = ASPECTS.get(ratio, ASPECTS["1:1"])
+    return {"width": w, "height": h}
+
+
+def build_prompt(prompt, lora):
+    if lora and lora != "none":
+        return f"{prompt}, <lora:{lora}:1>"
+    return prompt
 
 
 def strip_data_url(data_url):
@@ -132,13 +138,16 @@ def get_used_seed(result, fallback=-1):
 
 def dispatch_mode(mode, data):
     """รองรับ payload เดิมของหน้าเว็บ: ทุกโหมดยิงมาที่ /api/generate พร้อมฟิลด์ mode"""
-    handlers = {"img2img": img2img, "blur": blur, "canny": canny, "detection": detect}
+    handlers = {"img2img": img2img, "blur": blur, "canny": canny}
     handler = handlers.get(mode)
     if not handler:
         return jsonify({"error": f"ไม่รองรับ mode: {mode}"}), 400
     data["image"] = data.get("image") or data.get("init_image")  # หน้าเว็บส่งชื่อ init_image
     if mode == "blur":
         data["strength"] = data.get("blur_strength", 15)         # หน้าเว็บส่งชื่อ blur_strength
+    elif mode == "canny":
+        data["low"] = data.get("threshold_low", data.get("low", 100))
+        data["high"] = data.get("threshold_high", data.get("high", 200))
     return handler(data)
 
 
@@ -172,18 +181,17 @@ def generate():
     if mode != "text2img":
         return dispatch_mode(mode, data)
     prompt = data.get("prompt")
-    style = data.get("style", "realistic")
+    lora = data.get("lora", "none")
 
     if not prompt:
         return jsonify({"error": "missing 'prompt'"}), 400
 
     payload = apply_model({
-        "prompt": build_prompt(prompt, style),
+        "prompt": build_prompt(prompt, lora),
         "negative_prompt": data.get("negative_prompt", ""),
         "steps": 20,
         "seed": int(data.get("seed", -1)),
-        "width": 1024,
-        "height": 1024,
+        **aspect_size(data.get("aspect_ratio")),
     }, data.get("model"))
 
     result, err = call_forge("/sdapi/v1/txt2img", payload)
@@ -205,7 +213,7 @@ def generate():
 def img2img(data=None):
     data = data if data is not None else (request.get_json(silent=True) or {})
     prompt = data.get("prompt")
-    style = data.get("style", "realistic")
+    lora = data.get("lora", "none")
     image = data.get("image")
     strength = data.get("strength", 0.6)  # script.js ส่งมาเป็น 0-1
 
@@ -221,7 +229,7 @@ def img2img(data=None):
 
     payload = apply_model({
         "init_images": [b64],
-        "prompt": build_prompt(prompt, style),
+        "prompt": build_prompt(prompt, lora),
         "negative_prompt": data.get("negative_prompt", ""),
         "denoising_strength": strength,
         "steps": 20,
@@ -293,39 +301,6 @@ def canny(data=None):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, int(data.get("low", 100)), int(data.get("high", 200)))
         return jsonify({"image_url": cv_to_data_url(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-
-_yolo = None
-
-
-def get_yolo():
-    """โหลด YOLO ครั้งแรกที่ใช้งาน (ดาวน์โหลด yolov8n.pt อัตโนมัติ ~6MB)"""
-    global _yolo
-    if _yolo is None:
-        from ultralytics import YOLO
-        _yolo = YOLO("yolov8n.pt")
-    return _yolo
-
-
-@app.route("/api/detect", methods=["POST"])
-def detect(data=None):
-    """ตรวจจับวัตถุด้วย YOLO แล้ววาดกรอบบนภาพ (ไม่ผ่าน Forge)"""
-    data = data if data is not None else (request.get_json(silent=True) or {})
-    if not data.get("image"):
-        return jsonify({"error": "missing 'image'"}), 400
-    try:
-        img = data_url_to_cv(data["image"])
-        result = get_yolo()(img, conf=float(data.get("conf", 0.25)),
-                              max_det=int(data.get("max_results", 300)), verbose=False)[0]
-        counts = {}
-        for cls in result.boxes.cls:
-            name = result.names[int(cls)]
-            counts[name] = counts.get(name, 0) + 1
-        return jsonify({"image_url": cv_to_data_url(result.plot()), "objects": counts})
-    except ImportError:
-        return jsonify({"error": "ยังไม่ได้ติดตั้ง ultralytics กรุณารัน: pip install ultralytics"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

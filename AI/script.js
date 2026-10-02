@@ -1,465 +1,297 @@
-// ----------------------------------------------------
-// 0. ค่า config ของ backend
-//    Browser → server.py (5000) → chat.py (5002) → Forge Neo (7860)
-//    หน้าเว็บคุยกับ server.py ที่เดียวเท่านั้น (server.py ส่งต่อให้ chat.py เอง)
-// ----------------------------------------------------
-const API_BASE = 'http://127.0.0.1:5000';   // server.py
+// ฟังก์ชันช่วยสำหรับการดึง Element จาก ID ทำให้โค้ดสั้นลง
+const $ = id => document.getElementById(id);
 
-let selectedModel = null; // เก็บ title ของโมเดลที่ผู้ใช้เลือกอยู่
-let selectedLora = 'none'; // เก็บชื่อไฟล์ LoRA ที่เลือก (none = ไม่ใช้)
-
-document.addEventListener('DOMContentLoaded', () => {
-
-    // ----------------------------------------------------
-    // 1. ระบบจัดการ แท็บโหมด (Dynamic UI)
-    // ----------------------------------------------------
-    const modeTabs = document.querySelectorAll('.mode-tab');
-
-    const uiGroups = {
-        model: document.getElementById('model-group'),
-        lora: document.getElementById('lora-group'),
-        seed: document.getElementById('seed-group'),
-        upload: document.getElementById('upload-group'),
-        strength: document.getElementById('strength-group'),
-        prompt: document.getElementById('prompt-group'),
-        negativePrompt: document.getElementById('negative-prompt-group'),
-        blur: document.getElementById('blur-group'),
-        canny: document.getElementById('canny-group'),
-        objects: document.getElementById('objects-group')
-    };
-
-    const modeButtonText = {
-        text2img: 'สร้างภาพ',
-        img2img: 'สร้างภาพ',
-        blur: 'เบลอภาพ',
-        canny: 'ตรวจจับขอบ (Canny)',
-        objects: 'ตรวจจับวัตถุ'
-    };
-
-    if (modeTabs.length > 0) {
-        modeTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelector('.mode-tab.active').classList.remove('active');
-                tab.classList.add('active');
-
-                const mode = tab.dataset.mode;
-
-                const submitBtnTextEl = document.querySelector('#submit-btn .btn-text');
-                if (submitBtnTextEl) submitBtnTextEl.textContent = modeButtonText[mode] || 'สร้างภาพ';
-
-                // เคลียร์ผลลัพธ์เก่าทุกครั้งที่สลับโหมด ไม่ให้ค้างข้ามหัวข้อ
-                const resultWrapperEl = document.getElementById('result');
-                const resultImageEl = document.getElementById('result-image');
-                if (resultWrapperEl) resultWrapperEl.style.display = 'none';
-                if (resultImageEl) resultImageEl.src = '';
-
-                Object.values(uiGroups).forEach(group => {
-                    if (group) group.classList.add('hidden');
-                });
-
-                if (mode === 'text2img') {
-                    if (uiGroups.model) uiGroups.model.classList.remove('hidden');
-                    if (uiGroups.lora) uiGroups.lora.classList.remove('hidden');
-                    if (uiGroups.seed) uiGroups.seed.classList.remove('hidden');
-                    if (uiGroups.prompt) uiGroups.prompt.classList.remove('hidden');
-                    if (uiGroups.negativePrompt) uiGroups.negativePrompt.classList.remove('hidden');
-                }
-                else if (mode === 'img2img') {
-                    if (uiGroups.model) uiGroups.model.classList.remove('hidden');
-                    if (uiGroups.lora) uiGroups.lora.classList.remove('hidden');
-                    if (uiGroups.seed) uiGroups.seed.classList.remove('hidden');
-                    if (uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if (uiGroups.strength) uiGroups.strength.classList.remove('hidden');
-                    if (uiGroups.prompt) uiGroups.prompt.classList.remove('hidden');
-                    if (uiGroups.negativePrompt) uiGroups.negativePrompt.classList.remove('hidden');
-                }
-                else if (mode === 'blur') {
-                    if (uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if (uiGroups.blur) uiGroups.blur.classList.remove('hidden');
-                }
-                else if (mode === 'canny') {
-                    if (uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if (uiGroups.canny) uiGroups.canny.classList.remove('hidden');
-                }
-                else if (mode === 'objects') {
-                    if (uiGroups.upload) uiGroups.upload.classList.remove('hidden');
-                    if (uiGroups.objects) uiGroups.objects.classList.remove('hidden');
-                }
-            });
-        });
-    }
-
-    // ----------------------------------------------------
-    // 2. ฟังก์ชันช่วยสลับปุ่มเลือก (ใช้กับ Model)
-    // ----------------------------------------------------
-    function setupChipSelection(selector, onSelect) {
-        const chips = document.querySelectorAll(selector);
-        if (chips.length > 0) {
-            chips.forEach(chip => {
-                chip.addEventListener('click', () => {
-                    const parent = chip.closest('.style-grid');
-                    parent.querySelector('.chip.active').classList.remove('active');
-                    chip.classList.add('active');
-                    if (typeof onSelect === 'function') onSelect(chip);
-                });
-            });
-        }
-    }
-
-    // ----------------------------------------------------
-    // 2.1 ดึงรายชื่อโมเดลจริงจาก Stability Matrix / Forge Neo (ผ่าน server.py → chat.py)
-    // ----------------------------------------------------
-    async function loadModels() {
-        const modelGrid = document.getElementById('model-grid');
-        if (!modelGrid) return;
-
-        try {
-            const res = await fetch(`${API_BASE}/api/models`);
-            const data = await res.json();
-
-            if (!res.ok || data.error) {
-                throw new Error(data.error || 'โหลดรายชื่อโมเดลไม่สำเร็จ');
-            }
-
-            const models = data.models || [];
-            if (models.length === 0) {
-                modelGrid.innerHTML = '<span class="model-loading">ไม่พบโมเดลใน Forge Neo</span>';
-                return;
-            }
-
-            modelGrid.innerHTML = '';
-            models.forEach((m, index) => {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.className = 'chip' + (index === 0 ? ' active' : '');
-                chip.dataset.model = m.title;
-                chip.textContent = m.model_name || m.title;
-                modelGrid.appendChild(chip);
-            });
-
-            selectedModel = models[0].title;
-
-            setupChipSelection('#model-grid .chip', (chip) => {
-                selectedModel = chip.dataset.model;
-            });
-
-        } catch (err) {
-            modelGrid.innerHTML = `<span class="model-loading">⚠️ โหลดโมเดลไม่สำเร็จ: ${err.message}</span>`;
-        }
-    }
-
-    loadModels();
-
-    // ปุ่มเลือก LoRA
-    setupChipSelection('#lora-grid .chip', (chip) => {
-        selectedLora = chip.dataset.lora;
-    });
-
-    // ----------------------------------------------------
-    // 2.2 ระบบอัปโหลดภาพ (คลิกเลือกไฟล์ + ลากมาวาง + แสดง preview)
-    // ----------------------------------------------------
-    const uploadBox = document.getElementById('upload-box');
-    const sourceImageInput = document.getElementById('source-image');
-    const uploadPreviewEl = document.getElementById('upload-preview');
-
-    function handleImageFile(file) {
-        if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            showToast('❌ ไฟล์ที่เลือกไม่ใช่รูปภาพ', 'error');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            uploadPreviewEl.src = e.target.result;
-            uploadBox.classList.add('has-image');
-        };
-        reader.onerror = () => {
-            showToast('❌ อ่านไฟล์ภาพไม่สำเร็จ', 'error');
-        };
-        reader.readAsDataURL(file);
-    }
-
-    if (uploadBox && sourceImageInput) {
-        uploadBox.addEventListener('click', () => {
-            sourceImageInput.click();
-        });
-
-        sourceImageInput.addEventListener('change', (e) => {
-            handleImageFile(e.target.files[0]);
-        });
-
-        uploadBox.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadBox.classList.add('drag-over');
-        });
-
-        uploadBox.addEventListener('dragleave', () => {
-            uploadBox.classList.remove('drag-over');
-        });
-
-        uploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadBox.classList.remove('drag-over');
-
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                sourceImageInput.files = e.dataTransfer.files;
-                handleImageFile(file);
-            }
-        });
-    }
-
-    // ----------------------------------------------------
-    // 2.3 Object Detection (MediaPipe Tasks Vision — ประมวลผลฝั่ง Browser ล้วนๆ)
-    //     โค้ด MediaPipe จริงๆ อยู่ในไฟล์ object-detector-module.js (โหลดแบบ
-    //     <script type="module">) ที่นี่แค่จัดการ UI/ค่าที่ผู้ใช้ตั้งไว้ แล้วเรียก
-    //     window.runObjectDetection(...) ที่โมดูลนั้นแขวนไว้ให้
-    // ----------------------------------------------------
-    const objectsModelSelect = document.getElementById('objects-model');
-    const objectsDelegateSelect = document.getElementById('objects-delegate');
-    const objectsMaxResultsInput = document.getElementById('objects-max-results');
-    const objectsMaxResultsVal = document.getElementById('objects-max-results-val');
-    const objectsThresholdInput = document.getElementById('objects-threshold');
-    const objectsThresholdVal = document.getElementById('objects-threshold-val');
-
-    function getObjectsSettings() {
-        return {
-            model: objectsModelSelect ? objectsModelSelect.value : 'efficientdet_lite0',
-            delegate: objectsDelegateSelect ? objectsDelegateSelect.value : 'GPU',
-            maxResults: objectsMaxResultsInput ? parseInt(objectsMaxResultsInput.value) : 3,
-            threshold: objectsThresholdInput ? parseFloat(objectsThresholdInput.value) : 0.5,
-        };
-    }
-
-    if (objectsMaxResultsInput && objectsMaxResultsVal) {
-        objectsMaxResultsInput.addEventListener('input', () => {
-            objectsMaxResultsVal.textContent = objectsMaxResultsInput.value;
-        });
-    }
-    if (objectsThresholdInput && objectsThresholdVal) {
-        objectsThresholdInput.addEventListener('input', () => {
-            objectsThresholdVal.textContent = parseFloat(objectsThresholdInput.value).toFixed(2);
-        });
-    }
-
-    async function runObjectDetection(imgEl) {
-        // เผื่อกดปุ่มเร็วเกินไปก่อนไฟล์ module โหลด/รัน import เสร็จ รอสูงสุด ~5 วิ
-        let waited = 0;
-        while (!window.runObjectDetection && waited < 5000) {
-            await new Promise((r) => setTimeout(r, 100));
-            waited += 100;
-        }
-        if (!window.runObjectDetection) {
-            throw new Error('โมดูล Object Detection ยังโหลดไม่สำเร็จ (เช็คอินเทอร์เน็ต/Console แล้วลองรีเฟรชหน้าใหม่)');
-        }
-
-        const settings = getObjectsSettings();
-        const { dataUrl, count } = await window.runObjectDetection(imgEl, settings);
-        if (count === 0) {
-            showToast('⚠️ ไม่พบวัตถุในภาพ ลองลด Score Threshold ดู', 'error');
-        }
-        return dataUrl;
-    }
-
-    // ----------------------------------------------------
-    // 2.4 Slider ปรับระดับการเปลี่ยนแปลงจากภาพต้นฉบับ (denoising strength)
-    // ----------------------------------------------------
-    const strengthSlider = document.getElementById('strength-slider');
-    const strengthValueLabel = document.getElementById('strength-value');
-
-    if (strengthSlider && strengthValueLabel) {
-        strengthSlider.addEventListener('input', () => {
-            strengthValueLabel.textContent = strengthSlider.value;
-        });
-    }
-
-    // ----------------------------------------------------
-    // 3. ระบบจัดการการกด "สร้างภาพ" (Form Submit)
-    // ----------------------------------------------------
-    const generateForm = document.getElementById('generate-form');
-    const submitBtn = document.getElementById('submit-btn');
-    const resultWrapper = document.getElementById('result');
-    const promptInput = document.getElementById('prompt');
-    const negativePromptInput = document.getElementById('negative-prompt');
-
-    const uploadPreview = document.getElementById('upload-preview');
-    const resultImage = document.getElementById('result-image');
-
-    const blurStrengthInput = document.getElementById('blur-strength');
-    const cannyLowInput = document.getElementById('canny-low');
-    const cannyHighInput = document.getElementById('canny-high');
-
-    const seedInput = document.getElementById('seed-input');
-    const randomSeedBtn = document.getElementById('random-seed-btn');
-    if (randomSeedBtn && seedInput) {
-        randomSeedBtn.addEventListener('click', () => { seedInput.value = -1; });
-    }
-
-    // รวม Prompt + แท็ก LoRA เช่น "a girl <lora:ghibli_style_offset:1>"
-    function buildPrompt() {
-        let p = promptInput.value.trim();
-        if (selectedLora !== 'none') p += ` <lora:${selectedLora}:1>`;
-        return p;
-    }
-
-    // seed = 0 ต้องใช้ได้ (ว่าง/ไม่ใช่ตัวเลข = -1 สุ่ม)
-    function getSeed() {
-        const v = parseInt(seedInput ? seedInput.value : '', 10);
-        return Number.isNaN(v) ? -1 : v;
-    }
-
-    if (generateForm) {
-        generateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const currentMode = document.querySelector('.mode-tab.active').dataset.mode;
-
-            if ((currentMode === 'text2img' || currentMode === 'img2img') && promptInput.value.trim() === '') {
-                showToast('❌ ไม่สำเร็จ: กรุณากรอกข้อความ Prompt', 'error');
-                return;
-            }
-
-            const needsModel = (currentMode === 'text2img' || currentMode === 'img2img');
-            if (needsModel && !selectedModel) {
-                showToast('❌ ไม่สำเร็จ: ยังไม่ได้เลือกโมเดล (หรือโหลดรายชื่อโมเดลไม่สำเร็จ)', 'error');
-                return;
-            }
-
-            const negativePrompt = negativePromptInput ? negativePromptInput.value.trim() : '';
-
-            submitBtn.classList.add('loading');
-            submitBtn.disabled = true;
-            resultWrapper.style.display = 'none';
-
-            try {
-                let data;
-
-                if (currentMode === 'text2img') {
-                    const res = await fetch(`${API_BASE}/api/generate`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt: buildPrompt(),
-                            style: 'none',   // ไม่ให้ chat.py เติม suffix สไตล์เอง
-                            seed: getSeed(),
-                            negative_prompt: negativePrompt,
-                            model: selectedModel,
-                        }),
-                    });
-                    data = await res.json();
-                    if (!res.ok || data.error) throw new Error(data.error || 'สร้างภาพไม่สำเร็จ');
-
-                } else if (currentMode === 'img2img') {
-                    if (!uploadPreview || !uploadPreview.src) {
-                        throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
-                    }
-                    const res = await fetch(`${API_BASE}/api/img2img`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt: buildPrompt(),
-                            style: 'none',   // ไม่ให้ chat.py เติม suffix สไตล์เอง
-                            seed: getSeed(),
-                            negative_prompt: negativePrompt,
-                            image: uploadPreview.src,
-                            model: selectedModel,
-                            strength: strengthSlider ? Number(strengthSlider.value) / 100 : 0.5,
-                        }),
-                    });
-                    data = await res.json();
-                    if (!res.ok || data.error) throw new Error(data.error || 'สร้างภาพไม่สำเร็จ');
-
-                } else if (currentMode === 'blur') {
-                    if (!uploadPreview || !uploadPreview.src) {
-                        throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
-                    }
-                    const res = await fetch(`${API_BASE}/api/blur`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            image: uploadPreview.src,
-                            strength: blurStrengthInput ? Number(blurStrengthInput.value) : 15,
-                        }),
-                    });
-                    data = await res.json();
-                    if (!res.ok || data.error) throw new Error(data.error || 'เบลอภาพไม่สำเร็จ');
-
-                } else if (currentMode === 'canny') {
-                    if (!uploadPreview || !uploadPreview.src) {
-                        throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
-                    }
-                    const res = await fetch(`${API_BASE}/api/canny`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            image: uploadPreview.src,
-                            low: cannyLowInput ? Number(cannyLowInput.value) : 100,
-                            high: cannyHighInput ? Number(cannyHighInput.value) : 200,
-                        }),
-                    });
-                    data = await res.json();
-                    if (!res.ok || data.error) throw new Error(data.error || 'ทำ Canny edge detection ไม่สำเร็จ');
-
-                } else if (currentMode === 'objects') {
-                    if (!uploadPreview || !uploadPreview.src) {
-                        throw new Error('กรุณาอัปโหลดภาพต้นฉบับก่อน');
-                    }
-                    // ประมวลผลฝั่ง browser ล้วนๆ ด้วย MediaPipe ไม่ต้องยิงไป backend
-                    const annotatedDataUrl = await runObjectDetection(uploadPreview);
-                    data = { image_url: annotatedDataUrl };
-
-                } else {
-                    throw new Error('โหมดนี้ยังไม่รองรับการเชื่อมต่อ backend');
-                }
-
-                resultImage.src = data.image_url;
-
-                // แสดง Seed ที่ใช้จริง (เฉพาะโหมดสร้างภาพ) เอาไปใส่ช่อง Seed เพื่อสร้างภาพซ้ำได้
-                const usedSeedText = document.getElementById('used-seed-text');
-                if (usedSeedText) {
-                    const hasSeed = (currentMode === 'text2img' || currentMode === 'img2img') && data.seed !== undefined;
-                    usedSeedText.textContent = hasSeed ? `Seed ที่ใช้: ${data.seed}` : '';
-                    usedSeedText.style.display = hasSeed ? 'block' : 'none';
-                }
-                resultWrapper.style.display = 'block';
-                showToast('✅ สร้างภาพสำเร็จ');
-
-            } catch (err) {
-                showToast(`❌ ไม่สำเร็จ: ${err.message}`, 'error');
-            } finally {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-            }
-        });
-    }
-});
-
-// ----------------------------------------------------
-// 4. ฟังก์ชันสำหรับแจ้งเตือน Pop-up (Toast Message)
-// ----------------------------------------------------
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-
-// ----------------------------------------------------
-// 5. ฟังก์ชันสำหรับปุ่ม Logout
-// ----------------------------------------------------
+// ---------- ระบบล็อกอิน (ใช้ร่วมทุกหน้า) ----------
 function logout() {
-    const confirmLogout = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
-    if (confirmLogout) {
-        window.location.href = 'index.html';
+    localStorage.removeItem('forgeAIUser');
+    window.location.href = 'index.html';
+}
+
+// ถ้ายังไม่ได้ล็อกอิน ให้เด้งกลับไปหน้า index.html (หน้านี้ไม่ได้โหลดในหน้า login/register)
+if (!localStorage.getItem('forgeAIUser')) {
+    window.location.replace('index.html');
+}
+
+class ForgeAIController {
+    constructor() {
+        // สถานะเริ่มต้นของระบบ
+        this.state = { mode: 'text2img', model: 'sd_counterfeitV30_v30', lora: 'none', imgBase64: null };
+        // API_BASE มาจาก config.js
+        this.api = `${API_BASE}/api/generate`;
+        this.init();
+    }
+
+    init() {
+        // ผูกปุ่มเลือกโหมด / โมเดล / LoRA
+        this.setupBtns('.mode-tab', 'mode');
+        this.setupBtns('.model-btn', 'model');
+        this.setupBtns('.lora-btn', 'lora');
+
+        // ปุ่มสุ่ม Seed (-1 = ให้ Backend สุ่มเอง)
+        $('random-seed-btn')?.addEventListener('click', () => $('seed-input').value = -1);
+
+        // Submit ฟอร์ม
+        $('generate-form')?.addEventListener('submit', e => this.submit(e));
+
+        // เลือกไฟล์ภาพต้นฉบับ
+        $('source-image-input')?.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                $('source-image-preview').src = ev.target.result;
+                $('upload-label').style.display = 'none';
+                $('image-preview-container').style.display = 'block';
+                this.state.imgBase64 = ev.target.result.split(',')[1];
+                this.state.imgDataUrl = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ลบภาพต้นฉบับ
+        $('remove-image-btn')?.addEventListener('click', () => {
+            $('source-image-input').value = '';
+            this.state.imgBase64 = null;
+            this.state.imgDataUrl = null;
+            $('image-preview-container').style.display = 'none';
+            $('upload-label').style.display = 'flex';
+        });
+
+        // ปุ่มหัวใจ: บันทึกลงแกลเลอรี่
+        $('like-btn')?.addEventListener('click', e => this.saveToGallery(e.currentTarget));
+
+        this.updateUI();
+    }
+
+    // ปุ่มแบบกลุ่ม (เลือกได้ทีละอัน)
+    setupBtns(selector, key) {
+        document.querySelectorAll(selector).forEach(btn => btn.addEventListener('click', e => {
+            document.querySelectorAll(selector).forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            this.state[key] = e.currentTarget.dataset.value || e.currentTarget.dataset.mode;
+            if (key === 'mode') this.updateUI();
+        }));
+    }
+
+    // ซ่อน/แสดงช่องกรอกตามโหมด
+    updateUI() {
+        const m = this.state.mode;
+        const gen = ['text2img', 'img2img'].includes(m);
+        const show = (id, cond) => { if ($(id)) $(id).style.display = cond ? 'block' : 'none'; };
+
+        show('group-model', gen);
+        show('group-lora', gen);
+        show('group-prompts', gen);
+        show('group-aspect', m === 'text2img'); // img2img ใช้ขนาดตามภาพต้นฉบับ
+        show('group-seed', gen);
+        show('group-strength', m === 'img2img');
+        show('group-upload', m !== 'text2img');
+        show('group-blur-strength', m === 'blur');
+        show('group-canny', m === 'canny');
+        show('group-detection', m === 'detection');
+
+        if ($('btn-text')) $('btn-text').textContent = this.btnLabel();
+    }
+
+    btnLabel() {
+        const texts = { img2img: 'แปลงภาพ (Image to Image)', canny: 'ตรวจจับขอบ (Canny)', detection: 'ตรวจจับวัตถุ', blur: 'เบลอภาพ' };
+        return texts[this.state.mode] || 'สร้างภาพ';
+    }
+
+    // ส่งข้อมูลไป Backend
+    async submit(e) {
+        e.preventDefault();
+        const m = this.state.mode;
+        const payload = { mode: m, model: this.state.model };
+
+        if (['text2img', 'img2img'].includes(m)) {
+            payload.lora = this.state.lora;
+            payload.prompt = $('prompt-input').value.trim();
+            payload.negative_prompt = $('negative-prompt-input').value.trim();
+            const seed = parseInt($('seed-input').value);
+            payload.seed = Number.isNaN(seed) ? -1 : seed;
+            if (!payload.prompt) return alert('กรุณาใส่ Prompt ก่อนครับ');
+            if (m === 'text2img') payload.aspect_ratio = $('aspect-input').value;
+            if (m === 'img2img') payload.strength = parseFloat($('strength-input').value) || 0.6;
+        } else if (m === 'blur') {
+            payload.blur_strength = parseInt($('blur-input').value) || 15;
+        } else if (m === 'canny') {
+            payload.threshold_low = parseInt($('canny-low').value) || 100;
+            payload.threshold_high = parseInt($('canny-high').value) || 200;
+        } else if (m === 'detection') {
+            payload.score_threshold = parseFloat($('score-threshold-input').value) || 0.5;
+            payload.max_results = parseInt($('max-results-input')?.value) || 3;
+            payload.detect_model = $('detect-model-select')?.value || 'efficientdet_lite0';
+        }
+
+        if (m !== 'text2img') {
+            if (!this.state.imgBase64) return alert('กรุณาอัปโหลดรูปภาพต้นฉบับก่อนครับ!');
+            payload.init_image = this.state.imgBase64;
+        }
+
+        this.setLoading(true);
+        try {
+            let data;
+            if (m === 'detection') {
+                // ตรวจจับวัตถุในเบราว์เซอร์ด้วย MediaPipe (ไม่ต้องใช้ Backend / YOLO)
+                data = await this.detectLocal(this.state.imgDataUrl, payload);
+            } else {
+                const res = await fetch(this.api, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            }
+            if (!data.image_url && !data.image_base64) throw new Error('ไม่พบข้อมูลรูปภาพตอบกลับจาก Backend');
+
+            const imgSrc = data.image_url || `data:image/png;base64,${data.image_base64}`;
+            $('output-image').src = imgSrc;
+            $('output-image').style.display = 'block';
+            $('placeholder-content').style.display = 'none';
+
+            // Seed (เฉพาะโหมดสร้างภาพ)
+            const gen = ['text2img', 'img2img'].includes(m);
+            $('seed-display-text').style.display = gen ? 'block' : 'none';
+            if (gen && data.seed !== undefined) $('used-seed-display').textContent = data.seed;
+
+            // ผลตรวจจับวัตถุ
+            const det = $('detect-result-text');
+            if (det) {
+                if (m === 'detection') {
+                    const parts = Object.entries(data.objects || {}).map(([k, v]) => `${k} ×${v}`);
+                    det.textContent = parts.length ? `ตรวจพบ: ${parts.join(', ')} (ใช้เวลา ${data.ms} ms)` : 'ไม่พบวัตถุในภาพ (ลองลดค่า Score Threshold)';
+                    det.style.display = 'block';
+                } else det.style.display = 'none';
+            }
+
+            $('download-btn').href = imgSrc;
+            $('like-btn').textContent = '🤍';
+            $('like-btn').dataset.liked = '';
+            $('result-actions').style.display = 'flex';
+            $('result-container').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+            $('placeholder-content').style.display = 'flex';
+            alert(`เกิดข้อผิดพลาด: ${err.message}\n(ตรวจสอบว่า server.py, chat.py และ Forge Neo รันอยู่หรือไม่)`);
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    // ---------- Object Detection (MediaPipe, ทำงานในเบราว์เซอร์) ----------
+    async loadDetector(modelName) {
+        const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0';
+        if (this._detector && this._detectorModel === modelName) return this._detector;
+        const { ObjectDetector, FilesetResolver } = await import(MP);
+        this._vision = this._vision || await FilesetResolver.forVisionTasks(`${MP}/wasm`);
+        const modelUrl = `https://storage.googleapis.com/mediapipe-models/object_detector/${modelName}/float16/1/${modelName}.tflite`;
+        const make = delegate => ObjectDetector.createFromOptions(this._vision, {
+            baseOptions: { modelAssetPath: modelUrl, delegate },
+            runningMode: 'IMAGE'
+        });
+        try { this._detector = await make('GPU'); }
+        catch { this._detector = await make('CPU'); }   // เครื่องที่ไม่รองรับ GPU
+        this._detectorModel = modelName;
+        return this._detector;
+    }
+
+    async detectLocal(dataUrl, opts) {
+        const detector = await this.loadDetector(opts.detect_model);
+        await detector.setOptions({ scoreThreshold: opts.score_threshold, maxResults: opts.max_results });
+
+        const img = await new Promise((ok, fail) => {
+            const i = new Image();
+            i.onload = () => ok(i);
+            i.onerror = () => fail(new Error('เปิดไฟล์ภาพไม่ได้'));
+            i.src = dataUrl;
+        });
+
+        const t0 = performance.now();
+        const result = detector.detect(img);
+        const ms = Math.round(performance.now() - t0);
+
+        // วาดภาพ + กรอบลง canvas ที่ขนาดจริงของภาพ แล้วส่งออกเป็น data URL
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const k = Math.max(1, Math.max(c.width, c.height) / 640);   // ปรับขนาดเส้น/ตัวอักษรตามภาพ
+        const objects = {};
+        result.detections.forEach(d => {
+            const { originX: x, originY: y, width: w, height: h } = d.boundingBox;
+            const cat = d.categories[0];
+            const label = `${cat.categoryName} (${Math.round(cat.score * 100)}%)`;
+            objects[cat.categoryName] = (objects[cat.categoryName] || 0) + 1;
+
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 3 * k;
+            ctx.strokeRect(x, y, w, h);
+
+            ctx.font = `600 ${13 * k}px 'Prompt', sans-serif`;
+            const tw = ctx.measureText(label).width;
+            const bh = 24 * k;
+            const ly = y - bh < 0 ? y : y - bh;                      // ถ้าชิดขอบบน ให้ป้ายอยู่ในกรอบ
+            ctx.fillStyle = '#06b6d4';
+            ctx.fillRect(x, ly, tw + 14 * k, bh);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(label, x + 7 * k, ly + 17 * k);
+        });
+
+        return { image_url: c.toDataURL('image/png'), objects, ms };
+    }
+
+    // ย่อภาพเป็น JPEG ก่อนเก็บลง localStorage (กันโควต้า ~5MB เต็ม)
+    compressForGallery(src, maxSide = 768) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => {
+                const s = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+                const c = document.createElement('canvas');
+                c.width = Math.round(img.naturalWidth * s);
+                c.height = Math.round(img.naturalHeight * s);
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                resolve(c.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = () => resolve(src);
+            img.src = src;
+        });
+    }
+
+    async saveToGallery(btn) {
+        const imgSrc = $('output-image').src;
+        if (!imgSrc || btn.dataset.liked) return;
+        const small = await this.compressForGallery(imgSrc);
+        try {
+            const gallery = JSON.parse(localStorage.getItem('forgeAIGallery') || '[]');
+            gallery.push({ src: small, mode: this.state.mode, date: new Date().toLocaleString('th-TH') });
+            localStorage.setItem('forgeAIGallery', JSON.stringify(gallery));
+            btn.textContent = '❤️';
+            btn.dataset.liked = '1';
+            alert('บันทึกรูปภาพลงในแกลเลอรี่เรียบร้อยแล้ว!');
+        } catch (err) {
+            alert('บันทึกไม่สำเร็จ: พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม กรุณาลบรูปเก่าในหน้าแกลเลอรี่ก่อน');
+        }
+    }
+
+    setLoading(loading) {
+        const btn = $('submit-btn');
+        if (!btn) return;
+        btn.disabled = loading;
+        $('btn-loader').style.display = loading ? 'inline-block' : 'none';
+        $('btn-text').textContent = loading ? '✨ กำลังประมวลผล...' : this.btnLabel();
+
+        if (loading) {
+            $('placeholder-text').textContent = '✨ AI กำลังสร้างสรรค์ผลงาน...';
+            $('placeholder-content').style.display = 'flex';
+            $('output-image').style.display = 'none';
+            $('result-actions').style.display = 'none';
+        } else if ($('output-image').style.display === 'none') {
+            $('placeholder-text').textContent = 'ภาพผลลัพธ์จะปรากฏที่นี่';
+        }
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => $('generate-form') && new ForgeAIController());
