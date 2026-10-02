@@ -1,293 +1,153 @@
-/* =========================================================
-   1. CSS Variables (Design Tokens) - Premium Dark Theme
-========================================================= */
+/* กำหนดตัวแปรสีหลักๆ เพื่อให้แก้สีทั้งเว็บได้ง่ายๆ (CSS Variables) */
 :root {
-    /* Colors */
-    --c-bg-main: #0b0f19;
-    --c-bg-card: rgba(26, 32, 44, 0.7);
-    --c-text-main: #f8fafc;
-    --c-text-muted: #94a3b8;
-    --c-border: rgba(255, 255, 255, 0.1);
-    
-    /* Gradients */
-    --grad-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    --grad-model: linear-gradient(135deg, #ff512f 0%, #f02fc2 100%);
-    --grad-lora: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
-    --grad-hover: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-    
-    /* Shadows */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
-    --shadow-glow-model: 0 6px 20px rgba(240, 47, 194, 0.4);
-    --shadow-glow-lora: 0 6px 20px rgba(0, 114, 255, 0.4);
-    --shadow-glow-btn: 0 6px 20px rgba(139, 92, 246, 0.4);
-
-    /* Transitions */
-    --trans-fast: 0.2s ease;
-    --trans-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --c-bg: #f4f5f7; /* สีพื้นหลังหลักของเว็บ */
+  --c-card: #ffffff; /* สีพื้นหลังของการ์ด (ฟอร์ม) */
+  --c-text: #1f2937; /* สีข้อความหลัก */
+  --c-text-mut: #6b7280; /* สีข้อความรอง (สีเทา) */
+  --c-border: #e5e7eb; /* สีเส้นขอบ */
+  --primary: #0284c7; /* สีหลัก (ฟ้า/น้ำเงิน) */
+  --primary-hover: #0369a1; /* สีหลักตอนเอาเมาส์ชี้ */
+  --trans: 0.2s ease; /* ความเร็วแอนิเมชันตอนเปลี่ยนสถานะ */
 }
 
-/* =========================================================
-   2. Reset & Typography
-========================================================= */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: 'Prompt', 'Plus Jakarta Sans', sans-serif;
-    background-color: var(--c-bg-main);
-    background-image: 
-        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
-    color: var(--c-text-main);
-    display: flex; min-height: 100vh;
-}
-.app-layout { display: flex; width: 100vw; }
+/* รีเซ็ตค่าพื้นฐานทุกอย่าง และใช้ฟอนต์ Prompt */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+body { background: var(--c-bg); color: var(--c-text); display: flex; }
 
-/* =========================================================
-   3. Sidebar Component
-========================================================= */
+/* โครงสร้างหลักของเว็บ (ให้เต็มจอ 100vh และ 100vw) */
+.app-layout { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
+
+/* ================= Sidebar (แถบเมนูด้านซ้าย) ================= */
 .sidebar {
-    width: 260px; 
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(12px);
-    border-right: 1px solid var(--c-border);
-    padding: 32px 24px; display: flex;
-    flex-direction: column; justify-content: space-between;
+  width: 260px; background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); /* ทำพื้นหลังเบลอๆ แบบกระจก */
+  border-right: 1px solid var(--c-border); padding: 32px 24px;
+  display: flex; flex-direction: column;
 }
-.brand h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.brand h1 span { 
-    background: var(--grad-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
+.brand h1 { font-size: 26px; font-weight: 700; color: var(--primary); }
+.brand h1 span { color: #f97316; }
 
 .nav-menu { margin-top: 40px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .nav-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 18px; border-radius: 12px;
-    text-decoration: none; color: var(--c-text-muted);
-    font-weight: 500; font-size: 14px; transition: var(--trans-fast);
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 12px;
+  text-decoration: none; color: var(--c-text-mut); font-weight: 500; transition: var(--trans);
 }
-.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--c-text-main); transform: translateX(4px); }
-.nav-item.active { 
-    background: rgba(139, 92, 246, 0.15); 
-    color: #a78bfa; 
-    font-weight: 600; 
-    border-left: 3px solid #8b5cf6;
-}
+.nav-item:hover { background: rgba(0,0,0,0.05); color: var(--c-text); }
+.nav-item.active { background: rgba(234, 88, 12, 0.1); color: #ea580c; border-left: 3px solid #ea580c; font-weight: 600; }
 
-.user-profile {
-    display: flex; align-items: center; gap: 12px;
-    padding-top: 20px; border-top: 1px solid var(--c-border);
-}
+.user-profile { display: flex; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--c-border); }
 .avatar-placeholder {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: var(--grad-primary); color: #fff;
-    font-weight: 700; display: flex; align-items: center; justify-content: center;
-    box-shadow: var(--shadow-md);
+  width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
 }
-.user-info { display: flex; flex-direction: column; }
-.user-name { font-size: 13px; font-weight: 600; color: var(--c-text-main); }
-.user-id { font-size: 11px; color: var(--c-text-muted); }
+.user-info { flex: 1; display: flex; flex-direction: column; }
+.user-info .user-name { font-size: 13px; font-weight: 600; }
+.user-info .user-id { font-size: 11px; color: var(--c-text-mut); }
+.logout-btn { color: var(--c-text-mut); font-size: 18px; text-decoration: none; padding: 8px; border-radius: 8px; transition: var(--trans); }
+.logout-btn:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
-/* =========================================================
-   4. Main Content & Layout
-========================================================= */
-.main-content { flex: 1; padding: 40px 60px; overflow-y: auto; }
+/* ================= Main Content (พื้นที่แสดงผลตรงกลาง-ขวา) ================= */
+.main-content { flex: 1; padding: 40px 60px; overflow-y: auto; } /* ให้มี scrollbar เมื่อเนื้อหาล้น */
 .page-header { margin-bottom: 25px; }
-.badge-subtitle { 
-    font-size: 11px; font-weight: 700; color: #a78bfa; 
-    letter-spacing: 1.5px; text-transform: uppercase;
-}
-.page-header h2 { font-size: 36px; font-weight: 700; margin: 6px 0; letter-spacing: -0.5px; }
-.page-header h2 .highlight { 
-    background: var(--grad-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.page-header p { color: var(--c-text-muted); font-size: 15px; margin-top: 8px;}
-.content-container { max-width: 840px; }
+.badge-subtitle { font-size: 11px; font-weight: 700; color: var(--c-text-mut); letter-spacing: 1.5px; }
+.page-header h2 { font-size: 36px; margin: 6px 0; font-weight: 700; color: var(--primary); }
+.page-header h2 .highlight { color: #ea580c; }
+.page-header p { color: var(--c-text-mut); font-size: 15px; }
 
-/* =========================================================
-   5. Form Elements (Pro Level UI)
-========================================================= */
-.form-card {
-    background: var(--c-bg-card); 
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--c-border);
-    border-radius: 24px; padding: 36px; 
-    box-shadow: var(--shadow-card);
-}
+/* ควบคุมความกว้างของเนื้อหา */
+.content-container { max-width: 1200px; width: 100%; }
+
+/* Layouts สำหรับแบ่ง 2 คอลัมน์ (ซ้าย-ตั้งค่า, ขวา-รูปภาพ) */
+.two-column-layout { display: flex; gap: 30px; align-items: flex-start; }
+.left-panel { flex: 1.2; min-width: 0; }
+.right-panel { flex: 1; min-width: 0; position: sticky; top: 20px; } /* เกาะด้านบนจอเวลาเลื่อนดูการตั้งค่า */
+
+/* การ์ดและฟอร์ม */
+.form-card { background: var(--c-card); border: 1px solid var(--c-border); border-radius: 24px; padding: 36px; }
 .form-group { margin-bottom: 24px; }
-.group-label {
-    display: block; font-weight: 600; font-size: 14px;
-    color: #e2e8f0; margin-bottom: 12px; letter-spacing: 0.5px;
-}
+.group-label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
 
-/* Tabs & Pills */
-.mode-tabs, .btn-selector-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;}
-.mode-tab, .pill-btn {
-    padding: 10px 20px; border: 1px solid var(--c-border);
-    background: rgba(255, 255, 255, 0.03); border-radius: 9999px;
-    color: var(--c-text-muted); font-weight: 500; font-size: 13px;
-    cursor: pointer; transition: var(--trans-bounce);
+/* ================= Form Buttons (ปุ่มตั้งค่าต่างๆ) ================= */
+.mode-tabs, .btn-selector-group { 
+  display: flex; gap: 10px; flex-wrap: nowrap; overflow-x: auto; 
+  margin-bottom: 24px; padding-bottom: 10px; 
+  margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px;
+  -ms-overflow-style: none; scrollbar-width: thin; 
 }
-.mode-tab { border-radius: 12px; }
-.mode-tab:hover, .pill-btn:hover { 
-    border-color: rgba(255, 255, 255, 0.2); 
-    background: rgba(255, 255, 255, 0.08); 
-    color: #fff;
-    transform: translateY(-2px); 
-}
+.mode-tabs::-webkit-scrollbar, .btn-selector-group::-webkit-scrollbar { height: 6px; }
+.mode-tabs::-webkit-scrollbar-track, .btn-selector-group::-webkit-scrollbar-track { background: transparent; }
+.mode-tabs::-webkit-scrollbar-thumb, .btn-selector-group::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 10px; }
 
-.mode-tab.active { 
-    border-color: #8b5cf6; color: #fff; 
-    background: rgba(139, 92, 246, 0.2);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); 
+.mode-tab, .pill-btn, .secondary-btn {
+  padding: 8px 16px; border: 1px solid var(--c-border); background: var(--c-bg); border-radius: 99px;
+  color: var(--c-text-mut); font-weight: 500; font-size: 13px; cursor: pointer; transition: var(--trans);
+  white-space: nowrap; flex-shrink: 0;
 }
-.model-btn.active { 
-    background: var(--grad-model); color: #fff; 
-    border-color: transparent; 
-    box-shadow: var(--shadow-glow-model); 
-    transform: translateY(-2px) scale(1.05); 
-}
-.lora-btn.active { 
-    background: var(--grad-lora); color: #fff; 
-    border-color: transparent; 
-    box-shadow: var(--shadow-glow-lora); 
-    transform: translateY(-2px) scale(1.05); 
-}
+.mode-tab:hover, .pill-btn:hover, .secondary-btn:hover { border-color: #cbd5e1; background: #e2e8f0; color: var(--c-text); }
+.mode-tab.active { background: var(--c-card); border-color: var(--c-text); color: var(--c-text); }
+.model-btn.active { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; border-color: transparent; }
+.lora-btn.active { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; border-color: transparent; }
 
-/* =========================================================
-   6. Image Upload Area
-========================================================= */
-.upload-area {
-    border: 2px dashed var(--c-border);
-    border-radius: 16px;
-    padding: 40px 20px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.2);
-    transition: var(--trans-fast);
-    position: relative;
-    overflow: hidden;
-}
-.upload-area:hover {
-    border-color: #8b5cf6;
-    background: rgba(139, 92, 246, 0.05);
-}
-.upload-label {
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
+/* Upload */
+.upload-area { border: 2px dashed var(--c-border); border-radius: 16px; padding: 40px 20px; text-align: center; background: var(--c-bg); cursor: pointer; position: relative; }
+.upload-area:hover { border-color: var(--primary); background: #f0f9ff; }
+.upload-label { display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--c-text-mut); }
 .upload-icon { font-size: 36px; opacity: 0.8; }
-.upload-text {
-    color: var(--c-text-muted);
-    font-size: 15px;
-    font-weight: 500;
-}
-#source-image-preview {
-    max-width: 100%;
-    max-height: 280px;
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
-    object-fit: contain;
-}
-.remove-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(4px);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: var(--trans-fast);
-}
-.remove-btn:hover { 
-    background: rgba(220, 38, 38, 0.9); 
-    transform: scale(1.05);
-}
+#source-image-preview { max-height: 280px; border-radius: 12px; object-fit: contain; }
+.remove-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: #fff; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+.remove-btn:hover { background: #dc2626; }
 
-/* =========================================================
-   7. Inputs & Actions
-========================================================= */
-textarea, input[type="number"] {
-    width: 100%; padding: 16px; border: 1px solid var(--c-border);
-    border-radius: 14px; font-size: 14px; color: #fff;
-    background: rgba(0, 0, 0, 0.2); outline: none; 
-    transition: var(--trans-fast); resize: vertical;
+/* Inputs */
+textarea, input, select {
+  width: 100%; padding: 16px; border: 1px solid var(--c-border); border-radius: 14px;
+  background: var(--c-card); color: var(--c-text); outline: none; transition: var(--trans);
 }
-textarea::placeholder, input[type="number"]::placeholder {
-    color: #475569;
-}
-textarea:focus, input[type="number"]:focus {
-    border-color: #8b5cf6; 
-    background: rgba(0, 0, 0, 0.4); 
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
-}
+textarea:focus, input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2); }
+input[type="range"] { padding: 0; border: none; background: transparent; box-shadow: none; }
 
 .seed-input-wrapper { display: flex; gap: 12px; }
-.seed-input-wrapper input { flex: 1; }
-.secondary-btn {
-    padding: 0 24px; background: rgba(255, 255, 255, 0.05); 
-    border: 1px solid var(--c-border);
-    border-radius: 12px; color: #e2e8f0; font-weight: 600; 
-    cursor: pointer; transition: var(--trans-fast);
-}
-.secondary-btn:hover { 
-    background: rgba(255, 255, 255, 0.1); 
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Primary Submit Button */
 .primary-btn {
-    width: 100%; padding: 16px; background: var(--grad-primary);
-    border: none; border-radius: 14px; color: #fff; font-size: 16px;
-    font-weight: 600; cursor: pointer; display: flex; justify-content: center;
-    align-items: center; gap: 10px; box-shadow: var(--shadow-glow-btn);
-    transition: var(--trans-bounce); margin-top: 20px;
-    letter-spacing: 0.5px;
+  width: 100%; padding: 16px; background: var(--primary); border: none; border-radius: 14px; color: #fff; font-size: 16px;
+  font-weight: 600; cursor: pointer; display: flex; justify-content: center; gap: 10px; margin-top: 20px; transition: var(--trans);
 }
-.primary-btn:hover { 
-    transform: translateY(-2px); 
-    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5); 
-    background: var(--grad-hover);
-}
-.primary-btn:disabled { 
-    background: #334155; box-shadow: none; 
-    transform: none; cursor: not-allowed; opacity: 0.7;
-}
+.primary-btn:hover { background: var(--primary-hover); }
+.primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
-/* Loader */
-.loader {
-    width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
-    border-bottom-color: #fff; border-radius: 50%;
-    animation: rotation 1s linear infinite;
-}
-@keyframes rotation { 100% { transform: rotate(360deg); } }
+/* ================= Results & Loader (ส่วนแสดงรูปภาพและแอนิเมชันโหลด) ================= */
+.result-container { text-align: center; }
+.image-box { max-width: 100%; margin: 15px auto; border-radius: 16px; border: 1px solid var(--c-border); background: var(--c-bg); overflow: hidden; }
+.image-box img { width: 100%; display: block; }
+.seed-used-text { color: var(--c-text-mut); font-size: 14px; }
+/* แอนิเมชันวงกลมหมุนๆ ตอนโหลด */
+.loader { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-bottom-color: #fff; border-radius: 50%; animation: rot 1s linear infinite; }
+@keyframes rot { 100% { transform: rotate(360deg); } }
 
-/* Result Box */
-.result-container { 
-    margin-top: 35px; padding-top: 30px; 
-    border-top: 1px solid var(--c-border); 
-    text-align: center; 
+/* ================= Responsive Mobile (ปรับเลย์เอาต์ตอนจอเล็ก) ================= */
+@media (max-width: 768px) {
+  .app-layout { flex-direction: column; overflow-y: auto; }
+  
+  /* เปลี่ยน Sidebar เป็นแนวนอนด้านบนจอ */
+  .sidebar {
+    width: 100%; flex-direction: row; align-items: center; justify-content: space-between;
+    padding: 15px 20px; border-right: none; border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+  }
+  .brand { margin-right: 15px; } 
+  .brand h1 { font-size: 20px; margin: 0; }
+  
+  .nav-menu { flex-direction: row; margin-top: 0; gap: 8px; flex: unset; }
+  .nav-item { padding: 8px 12px; }
+  .nav-item span:not(.icon) { display: none; }
+  
+  .user-profile { padding-top: 0; border: none; border-left: 1px solid var(--c-border); padding-left: 15px; gap: 10px; }
+  .user-info { display: none; }
+  
+  /* ปรับเนื้อหาหลัก */
+  .main-content { padding: 20px 15px; overflow-y: visible; }
+  .two-column-layout { flex-direction: column; }
+  .right-panel { position: static; width: 100%; }
+  
+  .form-card { padding: 20px; }
+  .page-header h2 { font-size: 28px; }
+  
+  #group-canny > div, .seed-input-wrapper { flex-direction: column !important; gap: 15px !important; }
 }
-.result-container h3 { 
-    font-size: 20px; margin-bottom: 20px; color: #e2e8f0;
-}
-.image-box { 
-    max-width: 512px; margin: 0 auto; border-radius: 16px; 
-    overflow: hidden; box-shadow: var(--shadow-card); 
-    border: 1px solid rgba(255,255,255,0.05);
-    background: rgba(0,0,0,0.3);
-}
-.image-box img { width: 100%; display: block; object-fit: contain; }
-.seed-used-text { font-size: 14px; color: var(--c-text-muted); margin-top: 16px; }
-.seed-used-text span { font-weight: 600; color: #a78bfa; }
