@@ -2,52 +2,69 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Forge AI</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="glow glow-1"></div><div class="glow glow-2"></div>
-    <div class="layout">
+    <div class="app-layout">
         <aside class="sidebar">
-            <a href="dashboard.html" class="logo">Forge <span class="grad-text">AI</span></a>
-            <nav>
-                <a href="dashboard.html" class="nav-item active">👥 บัญชีของฉัน</a>
-                <a href="home.html" class="nav-item">🎨 สร้างภาพ</a>
-                <a href="gallery.html" class="nav-item">🖼️ แกลเลอรี่</a>
-                <a href="about.html" class="nav-item">ℹ️ เกี่ยวกับ</a>
+            <div class="brand"><h1>Forge <span>AI</span></h1></div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item active"><span class="icon">📊</span><span>ภาพรวมระบบ</span></a>
+                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
+                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="about.html" class="nav-item"><span class="icon">ℹ️</span><span>เกี่ยวกับ</span></a>
             </nav>
-            <p class="sidebar-footer">Forge AI<br>Distributed System Project</p>
+            <div class="user-profile">
+                <div class="avatar-placeholder">KP</div>
+                <div class="user-info">
+                    <span class="user-name">Kannithi Promtong</span>
+                    <span class="user-id">Student ID: 6710301041</span>
+                </div>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
+            </div>
         </aside>
 
         <main class="main-content">
-            <h1>Welcome to <span class="grad-text">Forge AI</span></h1>
-            <p style="color: var(--dim); margin-bottom: 24px;">โปรเจกต์ระบบสร้างภาพด้วย AI ผ่านสถาปัตยกรรมแบบกระจายศูนย์</p>
-            
-            <div class="panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; padding: 20px;">
-                <div>
-                    <h3 style="margin-bottom: 4px; font-size: 1.1rem;">สถานะบัญชี (Account Status)</h3>
-                    <p style="color: var(--dim); font-size: 0.9rem;">เข้าสู่ระบบในชื่อ: <strong style="color: var(--cyan);" id="current-user">Kannithi Promtong</strong></p>
-                </div>
-                <button class="btn-secondary" onclick="logout()" style="border-color: var(--orange); color: var(--orange);">
-                    🚪 ล็อคเอาท์
-                </button>
-            </div>
+            <header class="page-header">
+                <span class="badge-subtitle">DASHBOARD</span>
+                <h2>Welcome to <span class="highlight">Forge AI</span></h2>
+                <p>โปรเจกต์ระบบสร้างภาพด้วย AI ผ่านสถาปัตยกรรมแบบกระจายศูนย์</p>
+            </header>
 
-            <div class="panel">
-                <h2>สถาปัตยกรรมระบบ (Distributed System)</h2>
-                <div style="margin-top: 20px; line-height: 1.8;">
-                    <p><strong>1. Frontend & Nginx (คุณ)</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.10</span></p><br>
-                    <p><strong>2. Backend API (Flask + SQLite)</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.20</span></p><br>
-                    <p><strong>3. AI Engine</strong> <br> IP: <span style="color:var(--cyan)">192.168.1.30</span></p>
+            <div class="content-container">
+                <div class="form-card" style="margin-bottom:24px; padding:24px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+                    <div>
+                        <h3 style="margin-bottom:4px; font-size:18px;">สถานะบัญชี (Account Status)</h3>
+                        <p style="color:var(--c-text-mut); font-size:14px;">เข้าสู่ระบบในชื่อ: <strong style="color:var(--primary);" id="current-user">-</strong></p>
+                    </div>
+                    <button class="secondary-btn" onclick="logout()" style="border-color:#ea580c; color:#ea580c;">🚪 ออกจากระบบ</button>
                 </div>
-                <br>
-                <a href="home.html" style="text-decoration: none;">
-                    <button class="btn-primary" style="width: auto;">เข้าสู่ระบบสร้างภาพ →</button>
-                </a>
+
+                <div class="form-card">
+                    <h3 style="margin-bottom:20px; font-size:18px;">สถาปัตยกรรมระบบ (Distributed System)</h3>
+                    <div style="line-height:1.8; font-size:15px;">
+                        <p><strong>1. Frontend &amp; Nginx</strong><br>IP: <span style="color:var(--primary)">192.168.1.10</span></p><br>
+                        <p><strong>2. Backend API (Flask + SQLite)</strong><br>IP: <span style="color:var(--primary)">192.168.1.20</span></p><br>
+                        <p><strong>3. AI Engine (Forge Neo)</strong><br>IP: <span style="color:var(--primary)">192.168.1.30</span></p>
+                    </div>
+                    <a href="home.html" style="text-decoration:none; display:block;">
+                        <button class="primary-btn" style="width:auto; padding:14px 28px;">เข้าสู่ระบบสร้างภาพ →</button>
+                    </a>
+                </div>
             </div>
         </main>
     </div>
-    
+
+    <script src="config.js"></script>
     <script src="script.js"></script>
+    <script>
+        try {
+            const u = JSON.parse(localStorage.getItem('forgeAIUser') || '{}');
+            if (u.username) document.getElementById('current-user').textContent = u.username + (u.email ? ` (${u.email})` : '');
+        } catch (e) {}
+    </script>
 </body>
 </html>
