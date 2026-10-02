@@ -17,10 +17,8 @@
                 <h1>Forge <span>AI</span></h1>
             </div>
             <nav class="nav-menu">
-                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>ภาพรวมระบบ</span></a>
                 <a href="home.html" class="nav-item active"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
                 <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
-                <a href="about.html" class="nav-item"><span class="icon">ℹ️</span><span>เกี่ยวกับ</span></a>
             </nav>
             <div class="user-profile">
                 <div class="avatar-placeholder">KP</div>
@@ -28,6 +26,9 @@
                     <span class="user-name">Kannithi Promtong</span>
                     <span class="user-id">Student ID: 6710301041</span>
                 </div>
+                <a href="index.html" class="logout-btn" title="ออกจากระบบ">
+                    <span class="icon">🚪</span>
+                </a>
             </div>
         </aside>
 
@@ -40,7 +41,7 @@
             </header>
 
             <div class="content-container">
-                <!-- Operation Modes -->
+                <!-- Operation Modes (Full Width) -->
                 <div class="mode-tabs" id="mode-selector">
                     <button type="button" class="mode-tab active" data-mode="text2img"><span class="tab-icon">⚡</span> Text to Image</button>
                     <button type="button" class="mode-tab" data-mode="img2img"><span class="tab-icon">🖌️</span> Image to Image</button>
@@ -49,88 +50,137 @@
                     <button type="button" class="mode-tab" data-mode="detection"><span class="tab-icon">📦</span> Objects Detection</button>
                 </div>
 
-                <!-- Generation Form -->
-                <div class="form-card">
-                    <form id="generate-form">
-                        
-                        <!-- 1. ส่วนเลือก Model (โชว์ทุกโหมด ยกเว้น Canny/Detection ถ้าไม่ใช้ก็ซ่อนได้ใน script) -->
-                        <div class="form-group" id="group-model">
-                            <label class="group-label">เลือกโมเดล (Base Model)</label>
-                            <div class="btn-selector-group" id="model-selector">
-                                <button type="button" class="pill-btn model-btn active" data-value="sd_counterfeitV30_v30">sd_counterfeitV30_v30</button>
-                                <button type="button" class="pill-btn model-btn" data-value="sd_manmaruMix_v30">sd_manmaruMix_v30</button>
-                                <button type="button" class="pill-btn model-btn" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button>
-                                <button type="button" class="pill-btn model-btn" data-value="sd_AnythingXL_xl">sd_AnythingXL_xl</button>
-                            </div>
-                        </div>
-
-                        <!-- 2. ส่วนเลือก LoRA (ซ่อนในโหมด Blur, Canny, Detection) -->
-                        <div class="form-group" id="group-lora">
-                            <label class="group-label">เลือก LoRA (Style Adjuster)</label>
-                            <div class="btn-selector-group" id="lora-selector">
-                                <button type="button" class="pill-btn lora-btn active" data-value="none">ไม่ใช้ LoRA</button>
-                                <button type="button" class="pill-btn lora-btn" data-value="detail_tweaker">Detail Tweaker</button>
-                                <button type="button" class="pill-btn lora-btn" data-value="anime_lineart">Anime Lineart</button>
-                                <button type="button" class="pill-btn lora-btn" data-value="flat_colour">Flat Colour</button>
-                            </div>
-                        </div>
-
-                        <!-- 3. ส่วนอัปโหลดรูปภาพ (ซ่อนใน Text to Image, โชว์ในโหมดอื่นๆ) -->
-                        <div class="form-group" id="group-upload" style="display: none;">
-                            <label class="group-label">อัปโหลดภาพต้นฉบับ</label>
-                            <div class="upload-area" id="upload-area">
-                                <input type="file" id="source-image-input" accept="image/*" hidden>
-                                <label for="source-image-input" class="upload-label" id="upload-label">
-                                    <span class="upload-icon">📤</span>
-                                    <span class="upload-text">คลิกเพื่ออัปโหลดรูปภาพที่นี่</span>
-                                </label>
-                                <div id="image-preview-container" style="display: none; position: relative; text-align: center;">
-                                    <img id="source-image-preview" src="" alt="Preview">
-                                    <button type="button" id="remove-image-btn" class="remove-btn">✕ ลบรูปภาพ</button>
+                <div class="two-column-layout">
+                    <div class="left-panel">
+                        <!-- Generation Form -->
+                    <div class="form-card">
+                        <form id="generate-form">
+                            <!-- 1. ส่วนเลือก Model -->
+                            <div class="form-group" id="group-model">
+                                <label class="group-label">เลือกโมเดล (Base Model)</label>
+                                <div class="btn-selector-group" id="model-selector">
+                                    <button type="button" class="pill-btn model-btn active" data-value="sd_counterfeitV30_v30">sd_counterfeitV30_v30</button>
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_manmaruMix_v30">sd_manmaruMix_v30</button>
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button>
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_AnythingXL_xl">sd_AnythingXL_xl</button>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 4. ส่วน Prompt และ Negative Prompt (ซ่อนในโหมด Blur, Canny, Detection) -->
-                        <div id="group-prompts">
-                            <div class="form-group">
-                                <label for="prompt-input" class="group-label">Prompt (คำอธิบายภาพ)</label>
-                                <textarea id="prompt-input" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
+                            <!-- 2. ส่วนเลือก LoRA -->
+                            <div class="form-group" id="group-lora">
+                                <label class="group-label">เลือก LoRA (Style Adjuster)</label>
+                                <div class="btn-selector-group" id="lora-selector">
+                                    <button type="button" class="pill-btn lora-btn active" data-value="none">ไม่ใช้ LoRA</button>
+                                    <button type="button" class="pill-btn lora-btn" data-value="detail_tweaker">Detail Tweaker</button>
+                                    <button type="button" class="pill-btn lora-btn" data-value="anime_lineart">Anime Lineart</button>
+                                    <button type="button" class="pill-btn lora-btn" data-value="flat_colour">Flat Colour</button>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="negative-prompt-input" class="group-label">Negative Prompt (สิ่งที่ไม่ต้องการในภาพ)</label>
-                                <textarea id="negative-prompt-input" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
+
+                            <!-- 3. ส่วนอัปโหลดรูปภาพ -->
+                            <div class="form-group" id="group-upload" style="display: none;">
+                                <label class="group-label">อัปโหลดภาพต้นฉบับ</label>
+                                <div class="upload-area" id="upload-area">
+                                    <input type="file" id="source-image-input" accept="image/*" hidden>
+                                    <label for="source-image-input" class="upload-label" id="upload-label">
+                                        <span class="upload-icon">📤</span>
+                                        <span class="upload-text">คลิกเพื่ออัปโหลดรูปภาพที่นี่</span>
+                                    </label>
+                                    <div id="image-preview-container" style="display: none; position: relative; text-align: center;">
+                                        <img id="source-image-preview" src="" alt="Preview">
+                                        <button type="button" id="remove-image-btn" class="remove-btn">✕ ลบรูปภาพ</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 5. ส่วน Blur Strength (โชว์เฉพาะโหมด Blur) -->
-                        <div class="form-group" id="group-blur-strength" style="display: none;">
-                            <label for="blur-input" class="group-label">Blur strength (ระดับความเบลอ)</label>
-                            <input type="number" id="blur-input" value="15" min="1" max="100">
-                        </div>
-
-                        <!-- 6. ส่วน Seed (ซ่อนในโหมด Blur, Canny, Detection) -->
-                        <div class="form-group" id="group-seed">
-                            <label for="seed-input" class="group-label">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
-                            <div class="seed-input-wrapper">
-                                <input type="number" id="seed-input" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า">
-                                <button type="button" id="random-seed-btn" class="secondary-btn">🎲 สุ่มใหม่ (-1)</button>
+                            <!-- 4. ส่วน Prompt -->
+                            <div id="group-prompts">
+                                <div class="form-group">
+                                    <label for="prompt-input" class="group-label">Prompt (คำอธิบายภาพ)</label>
+                                    <textarea id="prompt-input" rows="3" placeholder="เช่น a lone astronaut walking on a neon city street"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="negative-prompt-input" class="group-label">Negative Prompt (สิ่งที่ไม่ต้องการในภาพ)</label>
+                                    <textarea id="negative-prompt-input" rows="2" placeholder="เช่น blurry, bad anatomy, low quality, text"></textarea>
+                                </div>
                             </div>
-                        </div>
 
-                        <button type="submit" id="submit-btn" class="primary-btn">
-                            <span id="btn-text">สร้างภาพ</span>
-                            <div id="btn-loader" class="loader" style="display: none;"></div>
-                        </button>
-                    </form>
+                            <!-- 5. ส่วน Blur Strength -->
+                            <div class="form-group" id="group-blur-strength" style="display: none;">
+                                <label for="blur-input" class="group-label">Blur strength (ระดับความเบลอ)</label>
+                                <input type="number" id="blur-input" value="15" min="1" max="100">
+                            </div>
 
+                            <!-- 5.1 ส่วน Canny -->
+                            <div id="group-canny" style="display: none;">
+                                <div style="display: flex; gap: 20px;">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="canny-low" class="group-label">Threshold Low</label>
+                                        <input type="number" id="canny-low" value="100">
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="canny-high" class="group-label">Threshold High</label>
+                                        <input type="number" id="canny-high" value="200">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5.2 ส่วน Object Detection -->
+                            <div id="group-detection" style="display: none;">
+                                <div class="form-group">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <label class="group-label">ความแม่นยำในการตรวจจับ (Score Threshold): <span id="score-threshold-val">0.50</span></label>
+                                    </div>
+                                    <input type="range" id="score-threshold-input" class="form-range" min="0.1" max="1.0" step="0.05" value="0.5" oninput="document.getElementById('score-threshold-val').innerText = parseFloat(this.value).toFixed(2)" style="width: 100%;">
+                                </div>
+                            </div>
+
+                            <!-- 6. ส่วนสัดส่วนภาพ (Aspect Ratio) -->
+                            <div class="form-group" id="group-aspect" style="display: none;">
+                                <label for="aspect-input" class="group-label">สัดส่วนภาพ (Aspect Ratio)</label>
+                                <select id="aspect-input" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); font-size: 14px; outline: none;">
+                                    <option value="1:1">1:1 (จัตุรัส)</option>
+                                    <option value="16:9">16:9 (แนวนอน)</option>
+                                    <option value="9:16">9:16 (แนวตั้ง)</option>
+                                </select>
+                            </div>
+
+                            <!-- 7. ส่วน Seed -->
+                            <div class="form-group" id="group-seed">
+                                <label for="seed-input" class="group-label">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
+                                <div class="seed-input-wrapper" style="display: flex; gap: 10px;">
+                                    <input type="number" id="seed-input" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า" style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg);">
+                                    <button type="button" id="random-seed-btn" class="secondary-btn">🎲 สุ่มใหม่</button>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="submit-btn" class="primary-btn">
+                                <span id="btn-text">สร้างภาพ</span>
+                                <div id="btn-loader" class="loader" style="display: none;"></div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="right-panel">
                     <!-- Result Output -->
-                    <div id="result-container" class="result-container" style="display: none;">
-                        <h3>ผลลัพธ์ภาพที่ได้</h3>
-                        <div class="image-box">
-                            <img id="output-image" src="" alt="AI Generated Output">
+                    <div id="result-container" class="form-card result-container" style="padding: 24px;">
+                        <div class="image-box" style="position: relative; min-height: 450px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 20px; transition: 0.3s ease;">
+                            <div id="placeholder-content" style="color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1;">
+                                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                  <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                <span id="placeholder-text" style="font-size: 15px; font-weight: 500; letter-spacing: 0.5px;">ภาพผลลัพธ์จะปรากฏที่นี่</span>
+                            </div>
+                            <img id="output-image" src="" alt="AI Generated Output" style="display: none; width: 100%; height: auto; max-height: 600px; object-fit: contain; position: relative; z-index: 2; border-radius: 18px;">
+                            <div id="result-actions" style="display: none; gap: 12px; position: absolute; bottom: 20px; right: 20px; z-index: 3;">
+                                <a id="download-btn" href="#" download="forge_ai_image.png" title="ดาวน์โหลดรูปลงเครื่อง" style="display: flex; width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; text-decoration: none; align-items: center; justify-content: center; transition: 0.2s ease;">📥</a>
+                                <button type="button" id="like-btn" title="บันทึกลงแกลเลอรี่" style="display: flex; width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; cursor: pointer; transition: 0.2s ease; align-items: center; justify-content: center;">🤍</button>
+                            </div>
                         </div>
-                        <p class="seed-used-text" id="seed-display-text">Seed ที่ใช้: <span id="used-seed-display">-</span></p>
+                        <p class="seed-used-text" id="seed-display-text" style="display: none; margin-top: 15px;">Seed ที่ใช้: <span id="used-seed-display">-</span></p>
                     </div>
                 </div>
             </div>
