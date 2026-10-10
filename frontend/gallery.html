@@ -4,79 +4,185 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gallery - Forge AI</title>
-    <!-- โหลด CSS ตัวเดียวกัน -->
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* กล่องรายละเอียดรูป (เปิดตอนคลิกรูปในแกลเลอรี่) */
+        .detail-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            align-items: center; justify-content: center; padding: 20px; z-index: 50;
+        }
+        .detail-overlay.open { display: flex; }
+        .detail-card {
+            background: var(--c-card); border-radius: 20px; max-width: 900px; width: 100%;
+            max-height: 90vh; overflow-y: auto; display: flex; flex-wrap: wrap;
+        }
+        .detail-image { flex: 1 1 320px; background: var(--c-bg); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .detail-image img { max-width: 100%; max-height: 60vh; border-radius: 12px; }
+        .detail-info { flex: 1 1 280px; padding: 28px; position: relative; }
+        .detail-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--c-text-mut); }
+        .detail-row { margin-bottom: 16px; }
+        .detail-row .label { font-size: 12px; font-weight: 700; color: var(--c-text-mut); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .detail-row .value { font-size: 14px; word-break: break-word; }
+        .detail-row .value.empty { color: var(--c-text-mut); font-style: italic; }
+        .gallery-card { cursor: pointer; }
+        .gallery-card:hover { outline: 2px solid var(--primary); }
+    </style>
 </head>
 <body>
     <div class="app-layout">
-        <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="brand">
-                <h1>Forge <span>AI</span></h1>
-            </div>
+            <div class="brand"><h1>Forge <span>AI</span></h1></div>
             <nav class="nav-menu">
                 <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
-                <!-- เมนูนี้ Active -->
                 <a href="gallery.html" class="nav-item active"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
             </nav>
             <div class="user-profile">
-                <div class="avatar-placeholder">KP</div>
+                <div class="avatar-placeholder" id="avatar-placeholder">--</div>
                 <div class="user-info">
-                    <span class="user-name">Kannithi Promtong</span>
-                    <span class="user-id">Student ID: 6710301041</span>
+                    <span class="user-name" id="user-name-display">—</span>
+                    <span class="user-id" id="user-email-display">—</span>
                 </div>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <header class="page-header">
                 <span class="badge-subtitle">MY GALLERY</span>
                 <h2>Image <span class="highlight">Gallery</span></h2>
                 <p>ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้</p>
             </header>
-
             <div class="content-container" id="gallery-container">
-                <!-- Data will be populated here -->
+                <p style="color:var(--c-text-mut);">กำลังโหลด...</p>
             </div>
         </main>
     </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('gallery-container');
-            const gallery = JSON.parse(localStorage.getItem('forgeAIGallery') || '[]');
-            
-            if (gallery.length === 0) {
-                container.innerHTML = `
-                    <div class="form-card" style="text-align: center; padding: 60px 20px;">
-                        <span style="font-size: 40px; margin-bottom: 15px; display: block;">📂</span>
-                        <h3 style="margin-bottom: 10px;">ยังไม่มีภาพที่บันทึกไว้</h3>
-                        <p style="color: var(--c-text-muted); font-size: 14px;">ภาพที่คุณกดถูกใจ (🤍) ในหน้า "สร้างภาพ" จะมาปรากฏที่นี่</p>
-                        <br>
-                        <a href="home.html" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; display: inline-block;">กลับไปสร้างภาพ</a>
-                    </div>
-                `;
-            } else {
-                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">';
-                gallery.reverse().forEach((img, idx) => {
-                    html += `
-                        <div class="form-card" style="padding: 15px; text-align: center;">
-                            <img src="${img.src}" style="width: 100%; border-radius: 12px; object-fit: contain; margin-bottom: 10px; border: 1px solid var(--c-border);">
-                            <div style="font-size: 12px; color: var(--c-text-muted); display: flex; justify-content: space-between;">
-                                <span>โหมด: ${img.mode.toUpperCase()}</span>
-                                <span>${img.date}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            }
-        });
-    </script>
-        </main>
+
+    <!-- กล่องรายละเอียดรูป -->
+    <div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this) closeDetail()">
+        <div class="detail-card">
+            <div class="detail-image"><img id="detail-img" src="" alt=""></div>
+            <div class="detail-info">
+                <button class="detail-close" onclick="closeDetail()">✕</button>
+                <div class="detail-row"><div class="label">โหมด</div><div class="value" id="detail-mode"></div></div>
+                <div class="detail-row"><div class="label">Prompt</div><div class="value" id="detail-prompt"></div></div>
+                <div class="detail-row"><div class="label">Negative Prompt</div><div class="value" id="detail-negative"></div></div>
+                <div class="detail-row"><div class="label">Model</div><div class="value" id="detail-model"></div></div>
+                <div class="detail-row"><div class="label">Seed</div><div class="value" id="detail-seed"></div></div>
+                <div class="detail-row"><div class="label">บันทึกเมื่อ</div><div class="value" id="detail-date"></div></div>
+                <button class="primary-btn" style="background:#ef4444;" id="detail-delete-btn">ลบรูปนี้</button>
+            </div>
+        </div>
     </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let galleryItems = [];
+
+        // แสดงชื่อ/อีเมลผู้ใช้จาก localStorage (เก็บไว้ตอน login ที่หน้า index.html)
+        (function showUserInfo() {
+            try {
+                const user = JSON.parse(localStorage.getItem('forge_user') || 'null');
+                if (user) {
+                    $('user-name-display').textContent = user.username || user.email || '—';
+                    $('user-email-display').textContent = user.email || '';
+                    $('avatar-placeholder').textContent = (user.username || user.email || '?').slice(0, 2).toUpperCase();
+                }
+            } catch (e) { /* เงียบไว้ ไม่ใช่ปัญหาใหญ่ */ }
+        })();
+
+        function fieldOrEmpty(el, value, fallback = '—') {
+            if (value === null || value === undefined || value === '') {
+                el.textContent = fallback;
+                el.classList.add('empty');
+            } else {
+                el.textContent = value;
+                el.classList.remove('empty');
+            }
+        }
+
+        function openDetail(id) {
+            const item = galleryItems.find(g => g.id === id);
+            if (!item) return;
+            $('detail-img').src = item.image_url;
+            fieldOrEmpty($('detail-mode'), (item.mode || '').toUpperCase());
+            fieldOrEmpty($('detail-prompt'), item.prompt);
+            fieldOrEmpty($('detail-negative'), item.negative_prompt);
+            fieldOrEmpty($('detail-model'), item.model);
+            fieldOrEmpty($('detail-seed'), item.seed);
+            fieldOrEmpty($('detail-date'), new Date(item.created_at).toLocaleString('th-TH'));
+            $('detail-delete-btn').onclick = () => removeImage(item.id);
+            $('detail-overlay').classList.add('open');
+        }
+
+        function closeDetail() {
+            $('detail-overlay').classList.remove('open');
+        }
+
+        async function loadGallery() {
+            const container = $('gallery-container');
+            try {
+                const res = await fetch(`${API_BASE}/api/gallery`, { headers: { ...authHeader() } });
+                if (res.status === 401) { logout(); return; }
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                galleryItems = data.items || [];
+                render();
+            } catch (err) {
+                container.innerHTML = `<div class="form-card" style="text-align:center; padding:40px;">
+                    <p style="color:#ef4444;">โหลดแกลเลอรี่ไม่สำเร็จ: ${err.message}</p>
+                    <p style="color:var(--c-text-mut); font-size:13px;">ตรวจสอบว่า server.py และ auth.py รันอยู่หรือไม่</p>
+                </div>`;
+            }
+        }
+
+        function render() {
+            const container = $('gallery-container');
+
+            if (galleryItems.length === 0) {
+                container.innerHTML = `
+                    <div class="form-card" style="text-align:center; padding:60px 20px;">
+                        <span style="font-size:40px; margin-bottom:15px; display:block;">📂</span>
+                        <h3 style="margin-bottom:10px;">ยังไม่มีภาพที่บันทึกไว้</h3>
+                        <p style="color:var(--c-text-mut); font-size:14px;">ภาพที่คุณกดถูกใจ (🤍) ในหน้า "สร้างภาพ" จะมาปรากฏที่นี่</p>
+                        <br>
+                        <a href="home.html" class="secondary-btn" style="text-decoration:none; padding:10px 20px; display:inline-block;">กลับไปสร้างภาพ</a>
+                    </div>`;
+                return;
+            }
+
+            let html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;">';
+            galleryItems.forEach(item => {
+                html += `
+                    <div class="form-card gallery-card" style="padding:15px; text-align:center; position:relative;" onclick="openDetail(${item.id})">
+                        <img src="${item.image_url}" style="width:100%; border-radius:12px; object-fit:contain; margin-bottom:10px; border:1px solid var(--c-border);">
+                        <div style="font-size:12px; color:var(--c-text-mut); display:flex; justify-content:space-between;">
+                            <span>โหมด: ${String(item.mode || '-').toUpperCase()}</span>
+                            <span>${new Date(item.created_at).toLocaleDateString('th-TH')}</span>
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html + '</div>';
+        }
+
+        async function removeImage(id) {
+            if (!confirm('ลบรูปนี้ออกจากแกลเลอรี่?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/gallery/${id}`, { method: 'DELETE', headers: { ...authHeader() } });
+                if (res.status === 401) { logout(); return; }
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                closeDetail();
+                galleryItems = galleryItems.filter(g => g.id !== id);
+                render();
+            } catch (err) {
+                alert('ลบไม่สำเร็จ: ' + err.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadGallery);
+    </script>
 </body>
 </html>

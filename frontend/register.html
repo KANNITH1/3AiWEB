@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>สมัครสมาชิก - Forge AI</title>
+  <title>สมัครสมาชิก — Forge AI</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; padding: 20px; background: var(--c-bg); }
@@ -53,12 +53,31 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="config.js"></script>
   <script>
-    function handleRegister(e) {
-      e.preventDefault(); 
-      alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
-      window.location.href = 'index.html'; 
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        const res = await fetch(API_BASE + '/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'สมัครสมาชิกไม่สำเร็จ');
+        alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+        window.location.href = 'index.html';
+      } catch (err) {
+        alert(err instanceof TypeError ? 'ไม่สามารถเชื่อมต่อ Backend ได้ (server.py ปิดอยู่)' : err.message);
+      } finally {
+        btn.disabled = false;
+      }
     }
   </script>
 </body>
