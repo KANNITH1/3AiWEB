@@ -1,5 +1,13 @@
 // config.js — ตั้งค่า URL ของ Backend ที่เดียว (โหลดก่อน script.js ทุกหน้า)
-// - เปิดเว็บด้วย IP/localhost ตรงๆ  -> ยิงไปพอร์ต 5000 ของเครื่องเดียวกัน (server.py)
-// - ถ้าใช้ Nginx reverse proxy (proxy /api/ ไปที่ server.py) ให้เปลี่ยนเป็น: const API_BASE = '';
-const API_BASE = 'http://' + (location.hostname || '127.0.0.1') + ':5000';
-//const API_BASE = 'http://192.168.1.50:5000';
+//
+// เลือกให้อัตโนมัติ:
+//  - เปิดผ่าน Nginx (พอร์ต 8080 หรือ 80)  -> API_BASE = ''  (เรียก /api/... ที่ origin เดียวกัน แล้ว Nginx proxy ไปที่ server.py)
+//  - เปิดด้วยวิธีอื่น (เช่น Live Server, file://) -> ยิงตรงไปพอร์ต 5000 ของเครื่องที่เปิดหน้าเว็บ (server.py)
+//
+// ถ้าต้องการบังคับ ให้เอาคอมเมนต์บรรทัดด้านล่างออกแล้วแก้ค่าเอง
+const API_BASE = (function () {
+  const viaNginx = location.protocol.startsWith('http') && (location.port === '8080' || location.port === '');
+  if (viaNginx) return '';
+  return 'http://' + (location.hostname || '127.0.0.1') + ':5000';
+})();
+// const API_BASE = 'http://192.168.1.20:5000';
