@@ -57,7 +57,7 @@ def add_cors_headers(resp):
 
 >>>>>>> eb5cb57ff5b560040c6eab68842d04625016a9e7
 AUTH_URL = "http://127.0.0.1:5001"   # ที่อยู่ auth.py
-CHAT_URL = "http://127.0.0.1:5002"   # ที่อยู่ chat.py
+CHAT_URL = "http://10.192.0.197:5002"   # ที่อยู่ chat.py
 TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) ใน chat.py
 
 # ⚠️ ต้องตรงกับ SECRET_KEY ใน auth.py เป๊ะๆ ไม่งั้น token จะถอดไม่ผ่าน
