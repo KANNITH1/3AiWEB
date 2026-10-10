@@ -87,7 +87,7 @@
         // แสดงชื่อ/อีเมลผู้ใช้จาก localStorage (เก็บไว้ตอน login ที่หน้า index.html)
         (function showUserInfo() {
             try {
-                const user = JSON.parse(localStorage.getItem('forge_user') || 'null');
+                const user = (JSON.parse(localStorage.getItem('forgeAIUser') || '{}').user) || null;
                 if (user) {
                     $('user-name-display').textContent = user.username || user.email || '—';
                     $('user-email-display').textContent = user.email || '';

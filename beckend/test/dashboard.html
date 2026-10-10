@@ -62,7 +62,7 @@
     <script src="script.js"></script>
     <script>
         try {
-            const u = JSON.parse(localStorage.getItem('forgeAIUser') || '{}');
+            const u = (JSON.parse(localStorage.getItem('forgeAIUser') || '{}').user) || {};
             if (u.username) document.getElementById('current-user').textContent = u.username + (u.email ? ` (${u.email})` : '');
         } catch (e) {}
     </script>
