@@ -20,7 +20,7 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-CHAT_URL = "http://127.0.0.1:5002"   # ถ้า chat.py อยู่คนละเครื่อง ให้เปลี่ยน IP
+CHAT_URL = "http://10.192.0.160:5002"   # ถ้า chat.py อยู่คนละเครื่อง ให้เปลี่ยน IP
 TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) ใน chat.py
 
 # field ที่ต้องมีในแต่ละ endpoint
