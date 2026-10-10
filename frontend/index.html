@@ -50,6 +50,7 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
     async function handleLogin(e) {
       e.preventDefault(); 
@@ -59,11 +60,12 @@
       const btn = document.getElementById('login-btn');
 
       try {
+        errorMsg.style.display = 'none';
         btn.textContent = 'กำลังตรวจสอบ...';
         btn.style.opacity = '0.7';
 
-        // ส่งข้อมูลไปหา Backend (ตอนนี้สมมติว่าเป็น /api/login)
-        const response = await fetch('http://127.0.0.1:5000/api/login', {
+        // ส่งข้อมูลไปหา Backend (server.py -> auth.py)
+        const response = await fetch(API_BASE + '/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
@@ -71,10 +73,15 @@
 
         if (response.ok) {
           // ถ้ารหัสถูกและ Backend ตอบกลับว่าสำเร็จ
+          // Backend ตอบ { token, user } -> เก็บในชื่อเดียวกับที่ script.js ใช้ (forge_token / forge_user)
+          const data = await response.json();
+          localStorage.setItem('forge_token', data.token);
+          localStorage.setItem('forge_user', JSON.stringify(data.user));
           window.location.href = 'home.html';
         } else {
-          // ถ้า Backend ตอบกลับว่ารหัสผิด (เช่น ส่ง 401 Unauthorized กลับมา)
-          errorMsg.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีข้อมูลในระบบ';
+          // รหัสผิด (401) / ถูกล็อกชั่วคราว (429) ฯลฯ -> แสดงข้อความที่ Backend ส่งมา
+          const err = await response.json().catch(() => ({}));
+          errorMsg.textContent = err.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีข้อมูลในระบบ';
           errorMsg.style.display = 'block';
         }
       } catch (err) {
