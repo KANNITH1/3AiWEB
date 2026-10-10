@@ -2,22 +2,25 @@
 const $ = id => document.getElementById(id);
 
 // ---------- ระบบล็อกอิน (ใช้ร่วมทุกหน้า) ----------
-// หน้า login (index.html) ต้องเก็บผลลัพธ์จาก POST /api/login ไว้แบบนี้หลัง login สำเร็จ:
-//   localStorage.setItem('forge_token', data.token);
-//   localStorage.setItem('forge_user', JSON.stringify(data.user));
+// หน้า login (index.html) เก็บผลลัพธ์จาก POST /api/login ไว้ที่ key 'forgeAIUser'
+// รูปแบบข้อมูล: { token: "...", user: { id, username, email } }
+function getSession() {
+    try { return JSON.parse(localStorage.getItem('forgeAIUser') || 'null'); }
+    catch (e) { return null; }
+}
+
 function authHeader() {
-    const token = localStorage.getItem('forge_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    const s = getSession();
+    return s && s.token ? { Authorization: `Bearer ${s.token}` } : {};
 }
 
 function logout() {
-    localStorage.removeItem('forge_token');
-    localStorage.removeItem('forge_user');
+    localStorage.removeItem('forgeAIUser');
     window.location.href = 'index.html';
 }
 
 // ถ้ายังไม่ได้ล็อกอิน (ไม่มี token) ให้เด้งกลับไปหน้า index.html
-if (!localStorage.getItem('forge_token')) {
+if (!getSession()?.token) {
     window.location.replace('index.html');
 }
 
