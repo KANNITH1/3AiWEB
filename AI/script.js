@@ -2,30 +2,53 @@
 const $ = id => document.getElementById(id);
 
 // ---------- ระบบล็อกอิน (ใช้ร่วมทุกหน้า) ----------
+// หน้า login (index.html) ต้องเก็บผลลัพธ์จาก POST /api/login ไว้แบบนี้หลัง login สำเร็จ:
+//   localStorage.setItem('forge_token', data.token);
+//   localStorage.setItem('forge_user', JSON.stringify(data.user));
+function authHeader() {
+    const token = localStorage.getItem('forge_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 function logout() {
-    localStorage.removeItem('forgeAIUser');
+    localStorage.removeItem('forge_token');
+    localStorage.removeItem('forge_user');
     window.location.href = 'index.html';
 }
 
-// ถ้ายังไม่ได้ล็อกอิน ให้เด้งกลับไปหน้า index.html (หน้านี้ไม่ได้โหลดในหน้า login/register)
-if (!localStorage.getItem('forgeAIUser')) {
+// ถ้ายังไม่ได้ล็อกอิน (ไม่มี token) ให้เด้งกลับไปหน้า index.html
+if (!localStorage.getItem('forge_token')) {
     window.location.replace('index.html');
 }
+
+// แสดงชื่อ/อีเมลของผู้ใช้ที่ login อยู่ใน sidebar ทุกหน้า (แทนชื่อที่เคยฝังไว้ใน HTML)
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const user = JSON.parse(localStorage.getItem('forge_user') || 'null');
+        if (!user) return;
+        const name = user.username || user.email || '';
+        const nameEl = document.querySelector('.user-profile .user-name');
+        const idEl = document.querySelector('.user-profile .user-id');
+        const avatarEl = document.querySelector('.user-profile .avatar-placeholder');
+        if (nameEl) nameEl.textContent = name || '—';
+        if (idEl) idEl.textContent = user.email || '';
+        if (avatarEl) avatarEl.textContent = (name || '?').slice(0, 2).toUpperCase();
+    } catch (e) { /* ไม่ใช่ปัญหาใหญ่ */ }
+});
 
 class ForgeAIController {
     constructor() {
         // สถานะเริ่มต้นของระบบ
-        this.state = { mode: 'text2img', model: 'sd_counterfeitV30_v30', lora: 'none', imgBase64: null };
+        this.state = { mode: 'text2img', model: 'sd_animagineXL40_v4Opt', imgBase64: null };
         // API_BASE มาจาก config.js
         this.api = `${API_BASE}/api/generate`;
         this.init();
     }
 
     init() {
-        // ผูกปุ่มเลือกโหมด / โมเดล / LoRA
+        // ผูกปุ่มเลือกโหมด / โมเดล
         this.setupBtns('.mode-tab', 'mode');
         this.setupBtns('.model-btn', 'model');
-        this.setupBtns('.lora-btn', 'lora');
 
         // ปุ่มสุ่ม Seed (-1 = ให้ Backend สุ่มเอง)
         $('random-seed-btn')?.addEventListener('click', () => $('seed-input').value = -1);
@@ -80,9 +103,7 @@ class ForgeAIController {
         const show = (id, cond) => { if ($(id)) $(id).style.display = cond ? 'block' : 'none'; };
 
         show('group-model', gen);
-        show('group-lora', gen);
         show('group-prompts', gen);
-        show('group-aspect', m === 'text2img'); // img2img ใช้ขนาดตามภาพต้นฉบับ
         show('group-seed', gen);
         show('group-strength', m === 'img2img');
         show('group-upload', m !== 'text2img');
@@ -105,13 +126,11 @@ class ForgeAIController {
         const payload = { mode: m, model: this.state.model };
 
         if (['text2img', 'img2img'].includes(m)) {
-            payload.lora = this.state.lora;
             payload.prompt = $('prompt-input').value.trim();
             payload.negative_prompt = $('negative-prompt-input').value.trim();
             const seed = parseInt($('seed-input').value);
             payload.seed = Number.isNaN(seed) ? -1 : seed;
             if (!payload.prompt) return alert('กรุณาใส่ Prompt ก่อนครับ');
-            if (m === 'text2img') payload.aspect_ratio = $('aspect-input').value;
             if (m === 'img2img') payload.strength = parseFloat($('strength-input').value) || 0.6;
         } else if (m === 'blur') {
             payload.blur_strength = parseInt($('blur-input').value) || 15;
@@ -120,7 +139,7 @@ class ForgeAIController {
             payload.threshold_high = parseInt($('canny-high').value) || 200;
         } else if (m === 'detection') {
             payload.score_threshold = parseFloat($('score-threshold-input').value) || 0.5;
-            payload.max_results = parseInt($('max-results-input')?.value) || 3;
+            payload.max_results = parseInt($('max-results-input')?.value) || 10;
             payload.detect_model = $('detect-model-select')?.value || 'efficientdet_lite0';
         }
 
@@ -135,12 +154,15 @@ class ForgeAIController {
             if (m === 'detection') {
                 // ตรวจจับวัตถุในเบราว์เซอร์ด้วย MediaPipe (ไม่ต้องใช้ Backend / YOLO)
                 data = await this.detectLocal(this.state.imgDataUrl, payload);
+            } else if (m === 'blur' || m === 'canny') {
+                data = await this.callCv(m, payload);
             } else {
                 const res = await fetch(this.api, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...authHeader() },
                     body: JSON.stringify(payload)
                 });
+                if (res.status === 401) { logout(); return; }  // token หมดอายุ/ไม่ถูกต้อง -> เด้งไป login
                 data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
             }
@@ -171,6 +193,14 @@ class ForgeAIController {
             $('like-btn').dataset.liked = '';
             $('result-actions').style.display = 'flex';
             $('result-container').scrollIntoView({ behavior: 'smooth' });
+
+            // เก็บไว้ให้ saveToGallery() ใช้ตอนกดหัวใจ (ต้องเก็บตอนนี้ เพราะตอนกดหัวใจ
+            // ผู้ใช้อาจแก้ช่อง prompt/seed ในฟอร์มไปแล้ว ค่าจะไม่ตรงกับรูปที่แสดงอยู่)
+            this.lastResult = {
+                imgSrc, mode: m, model: this.state.model,
+                prompt: payload.prompt, negative_prompt: payload.negative_prompt,
+                seed: (gen && data.seed !== undefined) ? data.seed : payload.seed,
+            };
         } catch (err) {
             $('placeholder-content').style.display = 'flex';
             alert(`เกิดข้อผิดพลาด: ${err.message}\n(ตรวจสอบว่า server.py, chat.py และ Forge Neo รันอยู่หรือไม่)`);
@@ -179,26 +209,49 @@ class ForgeAIController {
         }
     }
 
-    // ---------- Object Detection (MediaPipe, ทำงานในเบราว์เซอร์) ----------
-    async loadDetector(modelName) {
-        const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0';
-        if (this._detector && this._detectorModel === modelName) return this._detector;
-        const { ObjectDetector, FilesetResolver } = await import(MP);
-        this._vision = this._vision || await FilesetResolver.forVisionTasks(`${MP}/wasm`);
-        const modelUrl = `https://storage.googleapis.com/mediapipe-models/object_detector/${modelName}/float16/1/${modelName}.tflite`;
-        const make = delegate => ObjectDetector.createFromOptions(this._vision, {
-            baseOptions: { modelAssetPath: modelUrl, delegate },
-            runningMode: 'IMAGE'
+    // Blur / Canny: เรียก endpoint เฉพาะ /api/blur และ /api/canny (รูปแบบเดิมของ chat.py)
+    //   blur : { image, strength }      canny : { image, low, high }
+    // ถ้า Backend ไม่มี endpoint นี้ (404/405) จะถอยไปใช้ /api/generate พร้อม mode แทน
+    async callCv(m, payload) {
+        const body = m === 'blur'
+            ? { image: this.state.imgDataUrl, strength: payload.blur_strength }
+            : { image: this.state.imgDataUrl, low: payload.threshold_low, high: payload.threshold_high };
+        const post = (url, b) => fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeader() },
+            body: JSON.stringify(b)
         });
-        try { this._detector = await make('GPU'); }
-        catch { this._detector = await make('CPU'); }   // เครื่องที่ไม่รองรับ GPU
-        this._detectorModel = modelName;
-        return this._detector;
+
+        let res = await post(`${API_BASE}/api/${m}`, body);
+        if (res.status === 404 || res.status === 405) {
+            res = await post(this.api, { ...payload, image: this.state.imgDataUrl });
+        }
+        if (res.status === 401) { logout(); throw new Error('กรุณา login ใหม่'); }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        return data;
+    }
+
+    // ---------- Object Detection (MediaPipe, ทำงานในเบราว์เซอร์) ----------
+    // ตัวตรวจจับอยู่ใน object-detector-module.js (โหลดเป็น <script type="module"> ใน home.html)
+    // และเปิดฟังก์ชัน window.runObjectDetection ให้เรียกจากที่นี่
+    waitForDetectorModule(timeoutMs = 15000) {
+        return new Promise((resolve, reject) => {
+            const t0 = Date.now();
+            const check = () => {
+                if (window.__objectDetectorModuleReady && window.runObjectDetection) return resolve();
+                if (window.__objectDetectorModuleFailed) return reject(new Error('โหลดโมดูลตรวจจับวัตถุจากเซิร์ฟเวอร์ ai ไม่ได้ (เช็คว่า chat.py รันอยู่)'));
+                if (Date.now() - t0 > timeoutMs) {
+                    return reject(new Error('โหลดโมดูลตรวจจับวัตถุไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต และเปิดหน้าเว็บผ่าน http:// ไม่ใช่ file://)'));
+                }
+                setTimeout(check, 100);
+            };
+            check();
+        });
     }
 
     async detectLocal(dataUrl, opts) {
-        const detector = await this.loadDetector(opts.detect_model);
-        await detector.setOptions({ scoreThreshold: opts.score_threshold, maxResults: opts.max_results });
+        await this.waitForDetectorModule();
 
         const img = await new Promise((ok, fail) => {
             const i = new Image();
@@ -207,72 +260,42 @@ class ForgeAIController {
             i.src = dataUrl;
         });
 
+        const base = { model: opts.detect_model, maxResults: opts.max_results, threshold: opts.score_threshold };
         const t0 = performance.now();
-        const result = detector.detect(img);
+        let result;
+        try { result = await window.runObjectDetection(img, { ...base, delegate: 'GPU' }); }
+        catch { result = await window.runObjectDetection(img, { ...base, delegate: 'CPU' }); }  // เครื่องที่ไม่รองรับ GPU
         const ms = Math.round(performance.now() - t0);
 
-        // วาดภาพ + กรอบลง canvas ที่ขนาดจริงของภาพ แล้วส่งออกเป็น data URL
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-
-        const k = Math.max(1, Math.max(c.width, c.height) / 640);   // ปรับขนาดเส้น/ตัวอักษรตามภาพ
-        const objects = {};
-        result.detections.forEach(d => {
-            const { originX: x, originY: y, width: w, height: h } = d.boundingBox;
-            const cat = d.categories[0];
-            const label = `${cat.categoryName} (${Math.round(cat.score * 100)}%)`;
-            objects[cat.categoryName] = (objects[cat.categoryName] || 0) + 1;
-
-            ctx.strokeStyle = '#06b6d4';
-            ctx.lineWidth = 3 * k;
-            ctx.strokeRect(x, y, w, h);
-
-            ctx.font = `600 ${13 * k}px 'Prompt', sans-serif`;
-            const tw = ctx.measureText(label).width;
-            const bh = 24 * k;
-            const ly = y - bh < 0 ? y : y - bh;                      // ถ้าชิดขอบบน ให้ป้ายอยู่ในกรอบ
-            ctx.fillStyle = '#06b6d4';
-            ctx.fillRect(x, ly, tw + 14 * k, bh);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(label, x + 7 * k, ly + 17 * k);
-        });
-
-        return { image_url: c.toDataURL('image/png'), objects, ms };
-    }
-
-    // ย่อภาพเป็น JPEG ก่อนเก็บลง localStorage (กันโควต้า ~5MB เต็ม)
-    compressForGallery(src, maxSide = 768) {
-        return new Promise(resolve => {
-            const img = new Image();
-            img.onload = () => {
-                const s = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
-                const c = document.createElement('canvas');
-                c.width = Math.round(img.naturalWidth * s);
-                c.height = Math.round(img.naturalHeight * s);
-                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                resolve(c.toDataURL('image/jpeg', 0.85));
-            };
-            img.onerror = () => resolve(src);
-            img.src = src;
-        });
+        return { image_url: result.dataUrl, objects: result.objects, ms };
     }
 
     async saveToGallery(btn) {
-        const imgSrc = $('output-image').src;
-        if (!imgSrc || btn.dataset.liked) return;
-        const small = await this.compressForGallery(imgSrc);
+        if (btn.dataset.liked || !this.lastResult) return;
+        btn.disabled = true;
         try {
-            const gallery = JSON.parse(localStorage.getItem('forgeAIGallery') || '[]');
-            gallery.push({ src: small, mode: this.state.mode, date: new Date().toLocaleString('th-TH') });
-            localStorage.setItem('forgeAIGallery', JSON.stringify(gallery));
+            const res = await fetch(`${API_BASE}/api/gallery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeader() },
+                body: JSON.stringify({
+                    image: this.lastResult.imgSrc,
+                    mode: this.lastResult.mode,
+                    model: this.lastResult.model,
+                    prompt: this.lastResult.prompt,
+                    negative_prompt: this.lastResult.negative_prompt,
+                    seed: this.lastResult.seed,
+                })
+            });
+            if (res.status === 401) { logout(); return; }
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
             btn.textContent = '❤️';
             btn.dataset.liked = '1';
-            alert('บันทึกรูปภาพลงในแกลเลอรี่เรียบร้อยแล้ว!');
         } catch (err) {
-            alert('บันทึกไม่สำเร็จ: พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม กรุณาลบรูปเก่าในหน้าแกลเลอรี่ก่อน');
+            alert('บันทึกลงแกลเลอรี่ไม่สำเร็จ: ' + err.message);
+        } finally {
+            btn.disabled = false;
         }
     }
 

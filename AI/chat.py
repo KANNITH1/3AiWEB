@@ -6,7 +6,7 @@ chat.py — Backend API (Flask)
 
 Endpoints:
   GET  /api/models     -> รายชื่อโมเดล (checkpoint) ที่มีใน Forge : { models: [{title, model_name}] }
-  POST /api/generate   -> text-to-image : { prompt, negative_prompt, model, style } -> { image_url }
+  POST /api/generate   -> text-to-image 1:1 : { prompt, negative_prompt, model } -> { image_url }
   POST /api/img2img    -> image-to-image: { prompt, negative_prompt, model, style, image, strength } -> { image_url }
   POST /api/upscale    -> upscale       : { image, scale } -> { image_url }
   POST /api/blur       -> เบลอภาพ (OpenCV)  : { image, strength } -> { image_url }
@@ -20,11 +20,12 @@ Endpoints:
 import base64
 import io
 import json
+import os
 
 import cv2
 import numpy as np
 from PIL import Image
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 
@@ -32,10 +33,10 @@ app = Flask(__name__)
 CORS(app)
 
 # เปลี่ยน IP เป็นเครื่องที่รัน Forge Neo หากรันแยกเครื่อง (เช่น "http://192.168.1.30:7860")
-FORGE_URL = "http://127.0.0.1:7860"
+FORGE_URL = os.environ.get("FORGE_URL", "http://127.0.0.1:7860")
 
-# ถ้าต้องการเพิ่ม suffix พิเศษตามโหมด สามารถเพิ่มได้ที่นี่
-# แต่ใน UI ใหม่เปลี่ยนเป็นใช้ Lora (Style Adjuster) แทน
+# ล็อกโมเดลให้ใช้ได้แค่ 2 ตัวนี้ (ตัวแรกเป็นค่าเริ่มต้น) ชื่ออื่นที่ส่งมาจะถูกเปลี่ยนเป็นตัวแรก
+ALLOWED_MODELS = ["sd_animagineXL40_v4Opt", "sd_manmaruMix_v30"]
 
 GEN_TIMEOUT = 180  # วินาที รอผลสร้างภาพจาก Forge Neo
 
@@ -43,19 +44,8 @@ GEN_TIMEOUT = 180  # วินาที รอผลสร้างภาพจ�
 UPSCALER = "R-ESRGAN 4x+"
 
 
-# ขนาดภาพตามสัดส่วนที่เลือกในหน้าเว็บ (กว้าง, สูง)
-ASPECTS = {"1:1": (1024, 1024), "16:9": (1344, 768), "9:16": (768, 1344)}
-
-
-def aspect_size(ratio):
-    w, h = ASPECTS.get(ratio, ASPECTS["1:1"])
-    return {"width": w, "height": h}
-
-
-def build_prompt(prompt, lora):
-    if lora and lora != "none":
-        return f"{prompt}, <lora:{lora}:1>"
-    return prompt
+# ล็อกสัดส่วนภาพที่ 1:1 (จัตุรัส) เท่านั้น
+IMAGE_SIZE = {"width": 1024, "height": 1024}
 
 
 def strip_data_url(data_url):
@@ -88,10 +78,11 @@ def prepare_image(b64_image, max_side=1024):
 
 
 def apply_model(payload, model):
-    """ถ้าผู้ใช้เลือกโมเดล ให้ Forge สลับ checkpoint ก่อนสร้างภาพ"""
-    if model:
-        payload["override_settings"] = {"sd_model_checkpoint": model}
-        payload["override_settings_restore_afterwards"] = False
+    """สลับ checkpoint ใน Forge ก่อนสร้างภาพ (เฉพาะโมเดลที่อนุญาต)"""
+    if model not in ALLOWED_MODELS:
+        model = ALLOWED_MODELS[0]
+    payload["override_settings"] = {"sd_model_checkpoint": model}
+    payload["override_settings_restore_afterwards"] = False
     return payload
 
 
@@ -151,6 +142,14 @@ def dispatch_mode(mode, data):
     return handler(data)
 
 
+@app.route("/api/ai/object-detector-module.js", methods=["GET"])
+def object_detector_module():
+    """ส่งไฟล์ JS ตรวจจับวัตถุ (MediaPipe) ให้หน้าเว็บโหลดไปรันในเบราว์เซอร์"""
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)),
+                               "object-detector-module.js",
+                               mimetype="application/javascript")
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
@@ -162,7 +161,8 @@ def get_models():
     try:
         resp = requests.get(f"{FORGE_URL}/sdapi/v1/sd-models", timeout=15)
         resp.raise_for_status()
-        models = [{"title": m.get("title"), "model_name": m.get("model_name")} for m in resp.json()]
+        models = [{"title": m.get("title"), "model_name": m.get("model_name")}
+                  for m in resp.json() if m.get("model_name") in ALLOWED_MODELS]
         return jsonify({"models": models})
     except requests.exceptions.ConnectionError:
         return jsonify({
@@ -181,17 +181,16 @@ def generate():
     if mode != "text2img":
         return dispatch_mode(mode, data)
     prompt = data.get("prompt")
-    lora = data.get("lora", "none")
 
     if not prompt:
         return jsonify({"error": "missing 'prompt'"}), 400
 
     payload = apply_model({
-        "prompt": build_prompt(prompt, lora),
+        "prompt": prompt,
         "negative_prompt": data.get("negative_prompt", ""),
         "steps": 20,
         "seed": int(data.get("seed", -1)),
-        **aspect_size(data.get("aspect_ratio")),
+        **IMAGE_SIZE,
     }, data.get("model"))
 
     result, err = call_forge("/sdapi/v1/txt2img", payload)
@@ -213,7 +212,6 @@ def generate():
 def img2img(data=None):
     data = data if data is not None else (request.get_json(silent=True) or {})
     prompt = data.get("prompt")
-    lora = data.get("lora", "none")
     image = data.get("image")
     strength = data.get("strength", 0.6)  # script.js ส่งมาเป็น 0-1
 
@@ -229,7 +227,7 @@ def img2img(data=None):
 
     payload = apply_model({
         "init_images": [b64],
-        "prompt": build_prompt(prompt, lora),
+        "prompt": prompt,
         "negative_prompt": data.get("negative_prompt", ""),
         "denoising_strength": strength,
         "steps": 20,

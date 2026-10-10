@@ -17,10 +17,8 @@
                 <h1>Forge <span>AI</span></h1>
             </div>
             <nav class="nav-menu">
-                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>ภาพรวมระบบ</span></a>
                 <a href="home.html" class="nav-item active"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
                 <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
-                <a href="about.html" class="nav-item"><span class="icon">ℹ️</span><span>เกี่ยวกับ</span></a>
             </nav>
             <div class="user-profile">
                 <div class="avatar-placeholder">KP</div>
@@ -61,21 +59,8 @@
                             <div class="form-group" id="group-model">
                                 <label class="group-label">เลือกโมเดล (Base Model)</label>
                                 <div class="btn-selector-group" id="model-selector">
-                                    <button type="button" class="pill-btn model-btn active" data-value="sd_counterfeitV30_v30">sd_counterfeitV30_v30</button>
+                                    <button type="button" class="pill-btn model-btn active" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button>
                                     <button type="button" class="pill-btn model-btn" data-value="sd_manmaruMix_v30">sd_manmaruMix_v30</button>
-                                    <button type="button" class="pill-btn model-btn" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button>
-                                    <button type="button" class="pill-btn model-btn" data-value="sd_AnythingXL_xl">sd_AnythingXL_xl</button>
-                                </div>
-                            </div>
-
-                            <!-- 2. ส่วนเลือก LoRA -->
-                            <div class="form-group" id="group-lora">
-                                <label class="group-label">เลือก LoRA (Style Adjuster)</label>
-                                <div class="btn-selector-group" id="lora-selector">
-                                    <button type="button" class="pill-btn lora-btn active" data-value="none">ไม่ใช้ LoRA</button>
-                                    <button type="button" class="pill-btn lora-btn" data-value="detail_tweaker">Detail Tweaker</button>
-                                    <button type="button" class="pill-btn lora-btn" data-value="anime_lineart">Anime Lineart</button>
-                                    <button type="button" class="pill-btn lora-btn" data-value="flat_colour">Flat Colour</button>
                                 </div>
                             </div>
 
@@ -143,16 +128,6 @@
                                 </div>
                             </div>
 
-                            <!-- 6. ส่วนสัดส่วนภาพ (Aspect Ratio) -->
-                            <div class="form-group" id="group-aspect" style="display: none;">
-                                <label for="aspect-input" class="group-label">สัดส่วนภาพ (Aspect Ratio)</label>
-                                <select id="aspect-input" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); font-size: 14px; outline: none;">
-                                    <option value="1:1">1:1 (จัตุรัส)</option>
-                                    <option value="16:9">16:9 (แนวนอน)</option>
-                                    <option value="9:16">9:16 (แนวตั้ง)</option>
-                                </select>
-                            </div>
-
                             <!-- 7. ส่วน Seed -->
                             <div class="form-group" id="group-seed">
                                 <label for="seed-input" class="group-label">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
@@ -197,5 +172,15 @@
     </div>
     <script src="config.js"></script>
     <script src="script.js"></script>
+    <!-- โมดูลตรวจจับวัตถุ (MediaPipe) อยู่ในโฟลเดอร์ ai/ ดึงผ่าน Gateway แล้วโหลดแบบ type="module" -->
+    <script>
+        (function () {
+            const s = document.createElement('script');
+            s.type = 'module';
+            s.src = API_BASE + '/api/ai/object-detector-module.js';
+            s.onerror = () => { window.__objectDetectorModuleFailed = true; };
+            document.body.appendChild(s);
+        })();
+    </script>
 </body>
 </html>

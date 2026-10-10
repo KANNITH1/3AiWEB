@@ -18,6 +18,7 @@ async function ensureDetector(model, delegate, maxResults, threshold) {
   if (needsReinit) {
     if (objectDetector) {
       try { objectDetector.close(); } catch (e) { /* ignore */ }
+      objectDetector = null; // กันค้างตัวเก่าที่ปิดไปแล้ว ถ้าสร้างตัวใหม่ไม่สำเร็จ
     }
 
     const modelUrl = `https://storage.googleapis.com/mediapipe-models/object_detector/${model}/float16/1/${model}.tflite`;
@@ -84,9 +85,18 @@ window.runObjectDetection = async function (imgEl, settings) {
   const detector = await ensureDetector(model, delegate, maxResults, threshold);
   const result = detector.detect(imgEl);
   const detections = result.detections || [];
+
+  // นับจำนวนวัตถุแยกตามชื่อ เช่น { person: 2, dog: 1 } ให้ script.js แสดงผลสรุป
+  const objects = {};
+  detections.forEach((d) => {
+    const name = d.categories[0].categoryName;
+    objects[name] = (objects[name] || 0) + 1;
+  });
+
   return {
     dataUrl: drawDetectionsOnImage(imgEl, detections),
     count: detections.length,
+    objects,
   };
 };
 
