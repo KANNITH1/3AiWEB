@@ -11,7 +11,11 @@ endpoint ที่ "สร้าง/แก้ภาพ" ต้องแนบ to
   (generate, img2img, upscale, blur, canny)
 endpoint ที่ไม่ต้อง login: health, models, register, login, chat
 
+การเช็ค token ทำที่ server.py เอง (ไม่ต้องเรียกไป auth.py ทุกครั้ง) โดยถอดรหัส JWT
+ด้วย SECRET_KEY ตัวเดียวกับใน auth.py — ถ้าแก้ SECRET_KEY ใน auth.py ต้องแก้ที่นี่ด้วย
 
+กันบอทกดสแปม: login/register ทุกครั้งจะตอบกลับช้าลง 3 วิเสมอ (ไม่ว่าสำเร็จหรือไม่)
+ไม่มี CAPTCHA, ไม่มีระบบล็อกบัญชี, ไม่มีจำกัดจำนวนสมัครสมาชิก
 """
 
 import threading
@@ -51,78 +55,18 @@ TIMEOUT = 200                         # มากกว่า GEN_TIMEOUT (180) 
 # ⚠️ ต้องตรงกับ SECRET_KEY ใน auth.py เป๊ะๆ ไม่งั้น token จะถอดไม่ผ่าน
 SECRET_KEY = "dev-secret-change-me"
 
-# CAPTCHA แบบทำเองในเครื่อง (ไม่พึ่งอินเทอร์เน็ต/Google ใช้ได้บนวง LAN ที่ไม่มีเน็ตออก)
-# ใช้กับหน้า register เท่านั้น เพื่อกันสแปมสมัครสมาชิกแบบกระจายหลาย IP ที่
-# rate-limit ต่อ IP เพียงอย่างเดียวหลบได้
-CAPTCHA_EXPIRE_SECONDS = 300   # โจทย์ 1 ข้อใช้ได้นานแค่ไหนก่อนหมดอายุ
-_CAPTCHA_STORE = {}            # captcha_id -> (answer:int, expire_at:float)
+RESPONSE_DELAY_SECONDS = 3   # หน่วงเวลาตอบกลับ login/register ทุกครั้ง กันกดสแปม
 
-
-def _prune_captchas():
-    now = time.time()
-    expired = [cid for cid, (_, exp) in _CAPTCHA_STORE.items() if exp < now]
-    for cid in expired:
-        _CAPTCHA_STORE.pop(cid, None)
-
-
-def generate_captcha():
-    """สุ่มโจทย์บวกเลขง่ายๆ คืน (captcha_id, question)"""
-    import random
-    import uuid
-    a, b = random.randint(1, 20), random.randint(1, 20)
-    answer = a + b
-    cid = uuid.uuid4().hex
-    with _RATE_LOCK:
-        _prune_captchas()
-        _CAPTCHA_STORE[cid] = (answer, time.time() + CAPTCHA_EXPIRE_SECONDS)
-    return cid, f"{a} + {b} = ?"
-
-
-def check_captcha(cid, answer):
-    """เช็คคำตอบ ใช้ได้ครั้งเดียว (ถูกหรือผิดก็ตาม ต้องขอโจทย์ใหม่เสมอ) กันเดาสุ่มซ้ำๆ"""
-    if not cid:
-        return False, "กรุณาตอบคำถามกันบอทก่อน"
-    with _RATE_LOCK:
-        entry = _CAPTCHA_STORE.pop(cid, None)
-    if entry is None:
-        return False, "คำถามกันบอทหมดอายุหรือถูกใช้ไปแล้ว กรุณาขอโจทย์ใหม่"
-    correct_answer, expire_at = entry
-    if time.time() > expire_at:
-        return False, "คำถามกันบอทหมดอายุ กรุณาขอโจทย์ใหม่"
-    try:
-        if int(str(answer).strip()) != correct_answer:
-            return False, "ตอบคำถามกันบอทผิด กรุณาลองใหม่"
-    except (ValueError, TypeError):
-        return False, "กรุณาใส่คำตอบเป็นตัวเลข"
-    return True, None
-
-# field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
-REQUIRED = {
-    "/api/generate": ["prompt"],
-    "/api/img2img": ["prompt", "image"],
-    "/api/upscale": ["image"],
-    "/api/blur": ["image"],
-    "/api/canny": ["image"],
-    "/chat": ["message"],
-    "/api/register": ["username", "password"],
-    "/api/login": ["username", "password"],
-    "/api/change-password": ["old_password", "new_password"],
-}
-
-
-# ---------- กันโจมตี login / register ----------
-RESPONSE_DELAY_SECONDS = 3     # หน่วงเวลาตอบกลับ login/register ทุกครั้ง
-
+# ---------- ระบบล็อก login ----------
+# ล็อกตาม email (ไม่ใช่ IP) เพราะผู้โจมตีอาจยิงมาจากหลายเครื่อง/หลาย IP พร้อมกัน
+# ข้อจำกัด: มีคนแกล้ง login ผิดด้วย email ของคนอื่นเพื่อล็อกบัญชีเขาได้ (DoS เฉพาะบัญชี)
+# ข้อมูลเก็บในหน่วยความจำ รีเซ็ตเมื่อ restart server.py
 LOGIN_MAX_FAILURES = 5         # login ผิดได้สูงสุดกี่ครั้ง
 LOGIN_WINDOW_SECONDS = 60      # ...ภายในกี่วินาที
-LOGIN_LOCKOUT_SECONDS = 60     # ถ้าเกิน ล็อกไว้กี่วินาที (ใช้ค่าเดียวกับ window ด้านบน)
-
-REGISTER_MAX_ATTEMPTS = 3      # สมัครสมาชิกได้สูงสุดกี่ครั้ง
-REGISTER_WINDOW_SECONDS = 60   # ...ภายในกี่วินาที ต่อ 1 IP
+LOGIN_LOCKOUT_SECONDS = 60     # ถ้าเกิน ล็อกไว้กี่วินาที
 
 _RATE_LOCK = threading.Lock()
-_LOGIN_FAILURES = {}      # username (lowercase) -> [timestamp, ...]
-_REGISTER_ATTEMPTS = {}   # ip -> [timestamp, ...]
+_LOGIN_FAILURES = {}   # username (lowercase) -> [timestamp, ...]
 
 
 def _prune(timestamps, window):
@@ -150,19 +94,19 @@ def clear_login_failures(username):
     with _RATE_LOCK:
         _LOGIN_FAILURES.pop(username.lower(), None)
 
-
-def is_register_rate_limited(ip):
-    with _RATE_LOCK:
-        attempts = _prune(_REGISTER_ATTEMPTS.get(ip, []), REGISTER_WINDOW_SECONDS)
-        _REGISTER_ATTEMPTS[ip] = attempts
-        return len(attempts) >= REGISTER_MAX_ATTEMPTS
-
-
-def record_register_attempt(ip):
-    with _RATE_LOCK:
-        attempts = _prune(_REGISTER_ATTEMPTS.get(ip, []), REGISTER_WINDOW_SECONDS)
-        attempts.append(time.time())
-        _REGISTER_ATTEMPTS[ip] = attempts
+# field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
+REQUIRED = {
+    "/api/generate": ["prompt"],
+    "/api/img2img": ["prompt", "image"],
+    "/api/upscale": ["image"],
+    "/api/blur": ["image"],
+    "/api/canny": ["image"],
+    "/chat": ["message"],
+    "/api/register": ["username", "email", "password"],
+    "/api/login": ["email", "password"],
+    "/api/change-password": ["old_password", "new_password"],
+    "/api/gallery": ["image"],
+}
 
 
 # ---------- auth (JWT) ----------
@@ -190,8 +134,6 @@ def login_required(f):
 
 # ---------- forwarding ----------
 def forward(base_url, path, method="POST", service="server", data=None):
-    """ส่งต่อ request ไปยัง base_url+path คืนค่าเป็น (body: dict, status: int)
-    (ยังไม่ครอบ jsonify — ให้ route เป็นคนตัดสินใจเองว่าจะ wrap/ทำอะไรต่อ)"""
     if method == "POST" and data is None:
         data = request.get_json(silent=True)
         if not isinstance(data, dict):
@@ -220,7 +162,9 @@ def forward(base_url, path, method="POST", service="server", data=None):
         return resp.json(), resp.status_code
     except ValueError:
         snippet = resp.text[:200].replace("\n", " ")
-        return {"error": f"{service} ตอบกลับไม่ใช่ JSON (status {resp.status_code}): {snippet}"}, 502
+        return {
+            "error": f"{service} ตอบกลับไม่ใช่ JSON (status {resp.status_code}): {snippet}"
+        }, 502
 
 
 def forward_chat(path, method="POST"):
@@ -238,45 +182,24 @@ def health():
     return jsonify({"status": "ok"})
 
 
-@app.route("/api/captcha", methods=["GET"])
-def captcha():
-    cid, question = generate_captcha()
-    return jsonify({"captcha_id": cid, "question": question})
-
-
 # ---------- auth routes (ไม่ต้อง login) ----------
 @app.route("/api/register", methods=["POST"])
 def register():
-    client_ip = request.remote_addr or "unknown"
-
-    if is_register_rate_limited(client_ip):
-        time.sleep(RESPONSE_DELAY_SECONDS)
-        return jsonify({
-            "error": f"สมัครสมาชิกถี่เกินไป กรุณารออย่างน้อย {REGISTER_WINDOW_SECONDS} วินาทีแล้วลองใหม่"
-        }), 429
-
-    data = request.get_json(silent=True) or {}
-    captcha_ok, captcha_error = check_captcha(data.get("captcha_id"), data.get("captcha_answer"))
-    if not captcha_ok:
-        time.sleep(RESPONSE_DELAY_SECONDS)
-        return jsonify({"error": captcha_error}), 400
-
-    record_register_attempt(client_ip)
-    body, status = forward(AUTH_URL, "/api/register", service="auth.py", data=data)
+    resp = forward_auth("/api/register")
     time.sleep(RESPONSE_DELAY_SECONDS)
-    return jsonify(body), status
+    return resp
 
 
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True)
-    if not isinstance(data, dict) or not data.get("username") or not data.get("password"):
+    if not isinstance(data, dict) or not data.get("email") or not data.get("password"):
         time.sleep(RESPONSE_DELAY_SECONDS)
-        return jsonify({"error": "missing 'username' or 'password'"}), 400
+        return jsonify({"error": "missing 'email' or 'password'"}), 400
 
-    username = data["username"]
+    email = data["email"]
 
-    if is_login_locked(username):
+    if is_login_locked(email):
         time.sleep(RESPONSE_DELAY_SECONDS)
         return jsonify({
             "error": f"พยายามเข้าสู่ระบบผิดหลายครั้งเกินไป กรุณารออย่างน้อย {LOGIN_LOCKOUT_SECONDS} วินาทีแล้วลองใหม่"
@@ -285,9 +208,9 @@ def login():
     body, status = forward(AUTH_URL, "/api/login", service="auth.py", data=data)
 
     if status == 200:
-        clear_login_failures(username)
+        clear_login_failures(email)
     elif status == 401:
-        record_login_failure(username)
+        record_login_failure(email)
 
     time.sleep(RESPONSE_DELAY_SECONDS)
     return jsonify(body), status
@@ -303,6 +226,19 @@ def me():
 @login_required
 def change_password():
     return forward_auth("/api/change-password")
+
+
+# ---------- gallery (ต้อง login เสมอ — ของใครของมัน) ----------
+@app.route("/api/gallery", methods=["GET", "POST"])
+@login_required
+def gallery():
+    return forward_auth("/api/gallery", method=request.method)
+
+
+@app.route("/api/gallery/<int:item_id>", methods=["DELETE"])
+@login_required
+def gallery_delete(item_id):
+    return forward_auth(f"/api/gallery/{item_id}", method="DELETE")
 
 
 # ---------- image routes (ไม่ต้อง login: models) ----------
