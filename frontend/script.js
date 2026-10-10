@@ -5,8 +5,11 @@ class ForgeAIController {
     constructor() {
         // กำหนดสถานะเริ่มต้นของระบบ เช่น โหมดเริ่มต้น โมเดลที่เลือก
         this.state = { mode: 'text2img', model: 'sd_counterfeitV30_v30', lora: 'none', seed: -1, imgBase64: null };
-        // URL สำหรับเชื่อมต่อไปยัง Backend (API)
-        this.api = 'http://172.20.56.243:5000/api/generate';
+        
+        // URL สำหรับเชื่อมต่อไปยัง Backend (API) - อัปเดตเป็น IP เซิร์ฟเวอร์ล่าสุด
+        this.api = 'http://10.192.0.212:5000/api/generate';
+        // หมายเหตุ: หากมีการตั้งค่า Nginx ให้ทำ Reverse Proxy ไว้ สามารถเปลี่ยนเป็น this.api = '/api/generate' ได้เลย
+
         this.init(); // เรียกใช้ฟังก์ชันเตรียมระบบตอนเริ่ม
     }
 
@@ -47,24 +50,24 @@ class ForgeAIController {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
-                $('source-image-preview').src = ev.target.result;
-                $('upload-label').style.display = 'none';
-                $('image-preview-container').style.display = 'block';
+                if ($('source-image-preview'))$('source-image-preview').src = ev.target.result;
+                if ($('upload-label'))$('upload-label').style.display = 'none';
+                if ($('image-preview-container'))$('image-preview-container').style.display = 'block';
                 this.state.imgBase64 = ev.target.result.split(',')[1];
             };
             reader.readAsDataURL(file);
         });
 
         $('remove-image-btn')?.addEventListener('click', () => {
-            $('source-image-input').value = '';
+            if ($('source-image-input'))$('source-image-input').value = '';
             this.state.imgBase64 = null;
-            $('image-preview-container').style.display = 'none';
-            $('upload-label').style.display = 'flex';
+            if ($('image-preview-container'))$('image-preview-container').style.display = 'none';
+            if ($('upload-label'))$('upload-label').style.display = 'flex';
         });
 
         // จัดการเวลากดปุ่มหัวใจ 🤍 เพื่อบันทึกลงแกลเลอรี่
         $('like-btn')?.addEventListener('click', (e) => {
-            const imgSrc = $('output-image').src;
+            const imgSrc = $('output-image')?.src;
             if (!imgSrc || imgSrc === '') return;
             
             // ดึงข้อมูลรูปเดิมที่มีอยู่ใน Local Storage (ถ้ามี)
@@ -83,6 +86,7 @@ class ForgeAIController {
             alert('บันทึกรูปภาพลงในแกลเลอรี่เรียบร้อยแล้ว!');
         });
 
+        // รันครั้งแรกเพื่อให้หน้าตาถูกตามโหมดเริ่มต้น
         this.updateUI();
     }
 
@@ -105,7 +109,7 @@ class ForgeAIController {
     updateUI() {
         const m = this.state.mode;
         // ฟังก์ชันช่วยสั้นๆ สำหรับแสดง (block) หรือซ่อน (none)
-        const show = (id, cond) => { if($(id)) $(id).style.display = cond ? 'block' : 'none'; };
+        const show = (id, cond) => { if($(id))$(id).style.display = cond ? 'block' : 'none'; };
         
         // กำหนดเงื่อนไขการแสดงผลแต่ละส่วน
         show('group-model', ['text2img', 'img2img'].includes(m));
@@ -136,10 +140,10 @@ class ForgeAIController {
 
         if (['text2img', 'img2img'].includes(m)) {
             payload.lora = this.state.lora;
-            payload.prompt = $('prompt-input').value.trim();
-            payload.negative_prompt = $('negative-prompt-input').value.trim();
-            payload.seed = parseInt($('seed-input').value) || -1;
-            if ($('aspect-input')) payload.aspect_ratio = $('aspect-input').value;
+            payload.prompt = $('prompt-input') ?$('prompt-input').value.trim() : '';
+            payload.negative_prompt = $('negative-prompt-input') ?$('negative-prompt-input').value.trim() : '';
+            payload.seed = $('seed-input') ? parseInt($('seed-input').value) || -1 : -1;
+            if ($('aspect-input')) payload.aspect_ratio =$('aspect-input').value;
         } else if (m === 'blur') {
             payload.blur_strength = parseInt($('blur-input').value) || 15;
         } else if (m === 'canny') {
@@ -165,30 +169,30 @@ class ForgeAIController {
                 body: JSON.stringify(payload) 
             });
             
-            if (!res.ok) throw new Error(res.status);
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
             const data = await res.json(); // อ่านข้อมูล JSON ที่ตอบกลับมา
             
             if (!data.image_url && !data.image_base64) return alert('ไม่พบข้อมูลรูปภาพตอบกลับจาก Backend');
             const imgSrc = data.image_url || `data:image/png;base64,${data.image_base64}`;
-            $('output-image').src = imgSrc;
             
-            $('seed-display-text').style.display = ['text2img', 'img2img'].includes(m) ? 'block' : 'none';
-            if (data.seed !== undefined) $('used-seed-display').textContent = data.seed;
+            if ($('output-image'))$('output-image').src = imgSrc;
+            
+            if ($('seed-display-text'))$('seed-display-text').style.display = ['text2img', 'img2img'].includes(m) ? 'block' : 'none';
+            if (data.seed !== undefined && $('used-seed-display'))$('used-seed-display').textContent = data.seed;
             
             // อัปเดตปุ่มดาวน์โหลดและแสดงปุ่มจัดการรูป
-            if ($('download-btn')) $('download-btn').href = imgSrc;
-            if ($('like-btn')) {
-                $('like-btn').textContent = '🤍';
+            if ($('download-btn'))$('download-btn').href = imgSrc;
+            if ($('like-btn')) {$('like-btn').textContent = '🤍';
                 $('like-btn').style.color = '';
             }
-            if ($('result-actions')) $('result-actions').style.display = 'flex';
+            if ($('result-actions'))$('result-actions').style.display = 'flex';
 
-            if ($('placeholder-content')) $('placeholder-content').style.display = 'none';
-            if ($('output-image')) $('output-image').style.display = 'block';
+            if ($('placeholder-content'))$('placeholder-content').style.display = 'none';
+            if ($('output-image'))$('output-image').style.display = 'block';
             
-            $('result-container').scrollIntoView({ behavior: 'smooth' });
+            if ($('result-container'))$('result-container').scrollIntoView({ behavior: 'smooth' });
         } catch (err) {
-            alert(`เกิดข้อผิดพลาด: ${err.message}\n(กรุณาตรวจสอบว่า Backend API รันอยู่หรือไม่)`);
+            alert(`เกิดข้อผิดพลาด: ${err.message}\n(กรุณาตรวจสอบว่า Backend API เปิดใช้งานอยู่ที่ IP ${this.api} หรือไม่)`);
         } finally {
             this.setLoading(false);
         }
@@ -201,19 +205,17 @@ class ForgeAIController {
         
         // ปิดไม่ให้กดปุ่มซ้ำขณะโหลด และโชว์แอนิเมชันหมุนๆ
         btn.disabled = loading;
-        $('btn-loader').style.display = loading ? 'inline-block' : 'none';
+        if ($('btn-loader'))$('btn-loader').style.display = loading ? 'inline-block' : 'none';
         
         const texts = { canny: 'ตรวจจับขอบ (Canny)', detection: 'ตรวจจับวัตถุ', blur: 'เบลอภาพ' };
-        $('btn-text').textContent = loading ? '✨ กำลังประมวลผล...' : (texts[this.state.mode] || 'สร้างภาพ');
+        if ($('btn-text'))$('btn-text').textContent = loading ? '✨ กำลังประมวลผล...' : (texts[this.state.mode] || 'สร้างภาพ');
         
-        if (loading && $('placeholder-text')) {
-            $('placeholder-text').textContent = '✨ AI กำลังสร้างสรรค์ผลงาน...';
-            $('placeholder-content').style.display = 'flex';
-            $('output-image').style.display = 'none';
+        if (loading && $('placeholder-text')) {$('placeholder-text').textContent = '✨ AI กำลังสร้างสรรค์ผลงาน...';
+            if ($('placeholder-content'))$('placeholder-content').style.display = 'flex';
+            if ($('output-image'))$('output-image').style.display = 'none';
             // ซ่อนปุ่ม action ขณะโหลด
-            if ($('result-actions')) $('result-actions').style.display = 'none';
-        } else if (!loading && $('placeholder-text') && $('output-image').style.display === 'none') {
-            $('placeholder-text').textContent = 'ภาพผลลัพธ์จะปรากฏที่นี่';
+            if ($('result-actions'))$('result-actions').style.display = 'none';
+        } else if (!loading && $('placeholder-text') &&$('output-image') && $('output-image').style.display === 'none') {$('placeholder-text').textContent = 'ภาพผลลัพธ์จะปรากฏที่นี่';
         }
     }
 }
