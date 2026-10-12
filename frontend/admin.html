@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการผู้ใช้ - Forge AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="brand"><h1>Forge <span>AI</span></h1></div>
+            <nav class="nav-menu">
+                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
+                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="admin.html" class="nav-item active"><span class="icon">🛡️</span><span>จัดการผู้ใช้</span></a>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar-placeholder">--</div>
+                <div class="user-info">
+                    <span class="user-name">—</span>
+                    <span class="user-id"></span>
+                </div>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <span class="badge-subtitle">ADMIN</span>
+                <h2>จัดการ<span class="highlight">ผู้ใช้</span></h2>
+                <p>แก้ไขข้อมูล เปลี่ยนสิทธิ์ รีเซ็ตรหัสผ่าน หรือลบบัญชีผู้ใช้ (เฉพาะ admin)</p>
+            </header>
+
+            <div class="content-container">
+                <div class="form-card" id="users-card">
+                    <div class="toolbar">
+                        <input type="text" id="search-input" placeholder="ค้นหา username หรือ email...">
+                        <span class="count" id="user-count"></span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="users">
+                            <thead>
+                                <tr><th>ID</th><th>Username</th><th>Email</th><th>สิทธิ์</th><th>รูปในแกลเลอรี่</th><th>สมัครเมื่อ</th><th></th></tr>
+                            </thead>
+                            <tbody id="users-body"><tr><td colspan="7" style="color:var(--c-text-mut);">กำลังโหลด...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- กล่องแก้ไขผู้ใช้ -->
+    <div class="modal-overlay" id="edit-overlay">
+        <div class="modal-card">
+            <h3 id="edit-title">แก้ไขผู้ใช้</h3>
+            <div class="form-group">
+                <label class="group-label" for="edit-username">Username</label>
+                <input type="text" id="edit-username" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label class="group-label" for="edit-email">Email</label>
+                <input type="email" id="edit-email" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label class="group-label" for="edit-role">สิทธิ์</label>
+                <select id="edit-role">
+                    <option value="user">user (ผู้ใช้ทั่วไป)</option>
+                    <option value="admin">admin (ผู้ดูแลระบบ)</option>
+                </select>
+                <div class="modal-hint" id="edit-role-hint" style="display:none;">ไม่สามารถเปลี่ยนสิทธิ์ของตัวเองได้</div>
+            </div>
+            <div class="form-group">
+                <label class="group-label" for="edit-password">รหัสผ่านใหม่ (ไม่บังคับ)</label>
+                <input type="password" id="edit-password" placeholder="เว้นว่างถ้าไม่ต้องการเปลี่ยน" autocomplete="new-password">
+                <div class="modal-hint">อย่างน้อย 8 ตัวอักษร</div>
+            </div>
+            <p class="modal-error" id="edit-error"></p>
+            <div class="modal-buttons">
+                <button class="primary-btn" id="edit-save-btn">บันทึก</button>
+                <button class="secondary-btn" id="edit-cancel-btn">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
