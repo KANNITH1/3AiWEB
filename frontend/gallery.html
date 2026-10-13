@@ -36,13 +36,12 @@
             <nav class="nav-menu">
                 <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
                 <a href="gallery.html" class="nav-item active"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
-                <a href="admin.html" class="nav-item"><span class="icon">🛡️</span><span>จัดการผู้ใช้</span></a>
             </nav>
             <div class="user-profile">
-                <div class="avatar-placeholder">--</div>
+                <div class="avatar-placeholder" id="avatar-placeholder">--</div>
                 <div class="user-info">
-                    <span class="user-name">—</span>
-                    <span class="user-id"></span>
+                    <span class="user-name" id="user-name-display">—</span>
+                    <span class="user-id" id="user-email-display">—</span>
                 </div>
                 <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
             </div>
@@ -80,94 +79,73 @@
     <script src="config.js"></script>
     <script src="script.js"></script>
     <script>
-        let galleryItems = [];
+        let galleryItems = [];   // รูปทั้งหมดของผู้ใช้ (จาก GET /api/gallery) ชื่อผู้ใช้ใน sidebar ใส่โดย script.js
+        const closeDetail = () => $('detail-overlay').classList.remove('open');
 
-        function fieldOrEmpty(el, value, fallback = '—') {
-            if (value === null || value === undefined || value === '') {
-                el.textContent = fallback;
-                el.classList.add('empty');
-            } else {
-                el.textContent = value;
-                el.classList.remove('empty');
-            }
+        /** ใส่ค่าในช่องรายละเอียด ถ้าไม่มีค่าแสดง "—" แบบสีจาง */
+        function setField(id, value) {
+            const empty = value === null || value === undefined || value === '';
+            $(id).textContent = empty ? '—' : value;
+            $(id).classList.toggle('empty', empty);
         }
 
+        /** เปิดกล่องรายละเอียดของรูป (คลิกการ์ดในแกลเลอรี่) */
         function openDetail(id) {
             const item = galleryItems.find(g => g.id === id);
             if (!item) return;
             $('detail-img').src = item.image_url;
-            fieldOrEmpty($('detail-mode'), (item.mode || '').toUpperCase());
-            fieldOrEmpty($('detail-prompt'), item.prompt);
-            fieldOrEmpty($('detail-negative'), item.negative_prompt);
-            fieldOrEmpty($('detail-model'), item.model);
-            fieldOrEmpty($('detail-seed'), item.seed);
-            fieldOrEmpty($('detail-date'), new Date(item.created_at).toLocaleString('th-TH'));
+            Object.entries({
+                mode: (item.mode || '').toUpperCase(), prompt: item.prompt, negative: item.negative_prompt,
+                model: item.model, seed: item.seed, date: new Date(item.created_at).toLocaleString('th-TH'),
+            }).forEach(([key, value]) => setField(`detail-${key}`, value));
             $('detail-delete-btn').onclick = () => removeImage(item.id);
             $('detail-overlay').classList.add('open');
         }
 
-        function closeDetail() {
-            $('detail-overlay').classList.remove('open');
-        }
-
         async function loadGallery() {
-            const container = $('gallery-container');
             try {
-                const res = await fetch(`${API_BASE}/api/gallery`, { headers: { ...authHeader() } });
-                if (res.status === 401) { logout(); return; }
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-                galleryItems = data.items || [];
+                galleryItems = (await api('/api/gallery')).items || [];
                 render();
             } catch (err) {
-                container.innerHTML = `<div class="form-card" style="text-align:center; padding:40px;">
+                if (err.status === 401) return;   // api() พาไปหน้า login แล้ว
+                $('gallery-container').innerHTML = `<div class="form-card" style="text-align:center; padding:40px;">
                     <p style="color:#ef4444;">โหลดแกลเลอรี่ไม่สำเร็จ: ${err.message}</p>
                     <p style="color:var(--c-text-mut); font-size:13px;">ตรวจสอบว่า server.py และ auth.py รันอยู่หรือไม่</p>
                 </div>`;
             }
         }
 
+        /** วาดการ์ดรูปทั้งหมด (หรือข้อความ "ยังไม่มีภาพ" ถ้าว่าง) */
         function render() {
-            const container = $('gallery-container');
-
-            if (galleryItems.length === 0) {
-                container.innerHTML = `
-                    <div class="form-card" style="text-align:center; padding:60px 20px;">
-                        <span style="font-size:40px; margin-bottom:15px; display:block;">📂</span>
-                        <h3 style="margin-bottom:10px;">ยังไม่มีภาพที่บันทึกไว้</h3>
-                        <p style="color:var(--c-text-mut); font-size:14px;">ภาพที่คุณกดถูกใจ (🤍) ในหน้า "สร้างภาพ" จะมาปรากฏที่นี่</p>
-                        <br>
-                        <a href="home.html" class="secondary-btn" style="text-decoration:none; padding:10px 20px; display:inline-block;">กลับไปสร้างภาพ</a>
-                    </div>`;
-                return;
-            }
-
-            let html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;">';
-            galleryItems.forEach(item => {
-                html += `
+            $('gallery-container').innerHTML = galleryItems.length === 0 ? `
+                <div class="form-card" style="text-align:center; padding:60px 20px;">
+                    <span style="font-size:40px; margin-bottom:15px; display:block;">📂</span>
+                    <h3 style="margin-bottom:10px;">ยังไม่มีภาพที่บันทึกไว้</h3>
+                    <p style="color:var(--c-text-mut); font-size:14px;">ภาพที่คุณกดถูกใจ (🤍) ในหน้า "สร้างภาพ" จะมาปรากฏที่นี่</p>
+                    <br>
+                    <a href="home.html" class="secondary-btn" style="text-decoration:none; padding:10px 20px; display:inline-block;">กลับไปสร้างภาพ</a>
+                </div>` : `
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;">
+                    ${galleryItems.map(item => `
                     <div class="form-card gallery-card" style="padding:15px; text-align:center; position:relative;" onclick="openDetail(${item.id})">
                         <img src="${item.image_url}" style="width:100%; border-radius:12px; object-fit:contain; margin-bottom:10px; border:1px solid var(--c-border);">
                         <div style="font-size:12px; color:var(--c-text-mut); display:flex; justify-content:space-between;">
                             <span>โหมด: ${String(item.mode || '-').toUpperCase()}</span>
                             <span>${new Date(item.created_at).toLocaleDateString('th-TH')}</span>
                         </div>
-                    </div>`;
-            });
-            container.innerHTML = html + '</div>';
+                    </div>`).join('')}
+                </div>`;
         }
 
         async function removeImage(id) {
             if (!confirm('ลบรูปนี้ออกจากแกลเลอรี่?')) return;
             try {
-                const res = await fetch(`${API_BASE}/api/gallery/${id}`, { method: 'DELETE', headers: { ...authHeader() } });
-                if (res.status === 401) { logout(); return; }
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                await api(`/api/gallery/${id}`, { method: 'DELETE' });
                 closeDetail();
                 galleryItems = galleryItems.filter(g => g.id !== id);
                 render();
             } catch (err) {
-                alert('ลบไม่สำเร็จ: ' + err.message);
+                if (err.status !== 401) alert('ลบไม่สำเร็จ: ' + err.message);
             }
         }
 

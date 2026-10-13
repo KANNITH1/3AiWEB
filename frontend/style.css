@@ -85,7 +85,6 @@ body { background: var(--c-bg); color: var(--c-text); display: flex; }
 .mode-tab:hover, .pill-btn:hover, .secondary-btn:hover { border-color: #cbd5e1; background: #e2e8f0; color: var(--c-text); }
 .mode-tab.active { background: var(--c-card); border-color: var(--c-text); color: var(--c-text); }
 .model-btn.active { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; border-color: transparent; }
-.lora-btn.active { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; border-color: transparent; }
 
 /* Upload */
 .upload-area { border: 2px dashed var(--c-border); border-radius: 16px; padding: 40px 20px; text-align: center; background: var(--c-bg); cursor: pointer; position: relative; }
