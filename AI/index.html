@@ -52,42 +52,32 @@
 
   <script src="config.js"></script>
   <script>
+    const $ = id => document.getElementById(id);
+
+    // ส่ง email/password ไป Backend (server.py -> auth.py) ถ้าผ่านจะเก็บ token ไว้ใน localStorage ให้ script.js ใช้ต่อ
     async function handleLogin(e) {
-      e.preventDefault(); 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const errorMsg = document.getElementById('error-message');
-      const btn = document.getElementById('login-btn');
+      e.preventDefault();
+      const error = $('error-message'), btn = $('login-btn');
+      const fail = msg => { error.textContent = msg; error.style.display = 'block'; };
 
+      error.style.display = 'none';
+      btn.textContent = 'กำลังตรวจสอบ...';
+      btn.style.opacity = '0.7';
       try {
-        errorMsg.style.display = 'none';
-        btn.textContent = 'กำลังตรวจสอบ...';
-        btn.style.opacity = '0.7';
-
-        // ส่งข้อมูลไปหา Backend (server.py -> auth.py)
-        const response = await fetch(API_BASE + '/api/login', {
+        const res = await fetch(API_BASE + '/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email: $('email').value, password: $('password').value })
         });
+        const data = await res.json().catch(() => ({}));
+        // รหัสผิด (401) / ถูกล็อกชั่วคราว (429) ฯลฯ -> แสดงข้อความที่ Backend ส่งมา
+        if (!res.ok || !data.token) return fail(data.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีข้อมูลในระบบ');
 
-        if (response.ok) {
-          // ถ้ารหัสถูกและ Backend ตอบกลับว่าสำเร็จ
-          // Backend ตอบ { token, user } -> เก็บในชื่อเดียวกับที่ script.js ใช้ (forge_token / forge_user)
-          const data = await response.json();
-          localStorage.setItem('forge_token', data.token);
-          localStorage.setItem('forge_user', JSON.stringify(data.user));
-          window.location.href = 'home.html';
-        } else {
-          // รหัสผิด (401) / ถูกล็อกชั่วคราว (429) ฯลฯ -> แสดงข้อความที่ Backend ส่งมา
-          const err = await response.json().catch(() => ({}));
-          errorMsg.textContent = err.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีข้อมูลในระบบ';
-          errorMsg.style.display = 'block';
-        }
+        localStorage.setItem('forge_token', data.token);
+        localStorage.setItem('forge_user', JSON.stringify(data.user));
+        window.location.href = 'home.html';
       } catch (err) {
-        // ถ้า Backend ปิดอยู่ (ไม่ได้เปิดเซิร์ฟเวอร์ Python)
-        errorMsg.textContent = 'ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลได้ (Backend ปิดอยู่)';
-        errorMsg.style.display = 'block';
+        fail('ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลได้ (Backend ปิดอยู่)');   // fetch ล้มเหลว = เซิร์ฟเวอร์ไม่ตอบ
       } finally {
         btn.textContent = 'เข้าสู่ระบบ';
         btn.style.opacity = '1';
