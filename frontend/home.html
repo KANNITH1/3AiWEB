@@ -7,24 +7,27 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-layout">
-        <!-- Sidebar Navigation -->
+        <!-- ===== แถบเมนูด้านข้าง (Sidebar) ===== -->
         <aside class="sidebar">
+            <!-- โลโก้และชื่อเว็บ -->
             <div class="brand">
                 <h1>Forge <span>AI</span></h1>
             </div>
+            <!-- เมนูนำทางไปหน้าต่างๆ -->
             <nav class="nav-menu">
                 <a href="home.html" class="nav-item active"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
                 <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
             </nav>
+            <!-- ข้อมูลโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ -->
             <div class="user-profile">
-                <div class="avatar-placeholder">KP</div>
+                <div class="avatar-placeholder">--</div>
                 <div class="user-info">
-                    <span class="user-name">Kannithi Promtong</span>
-                    <span class="user-id">Student ID: 6710301041</span>
+                    <span class="user-name">—</span>
+                    <span class="user-id"></span>
                 </div>
                 <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ">
                     <span class="icon">🚪</span>
@@ -32,8 +35,9 @@
             </div>
         </aside>
 
-        <!-- Main Workspace -->
+        <!-- ===== พื้นที่ทำงานหลัก ===== -->
         <main class="main-content">
+            <!-- หัวข้อหน้าเว็บ -->
             <header class="page-header">
                 <span class="badge-subtitle">AI IMAGE ENGINE</span>
                 <h2>AI Image <span class="highlight">Engine</span></h2>
@@ -41,21 +45,27 @@
             </header>
 
             <div class="content-container">
-                <!-- Operation Modes (Full Width) -->
+                <!-- ===== แถบเลือกโหมดการทำงาน ===== -->
                 <div class="mode-tabs" id="mode-selector">
+                    <!-- โหมดสร้างภาพจากข้อความ -->
                     <button type="button" class="mode-tab active" data-mode="text2img"><span class="tab-icon">⚡</span> Text to Image</button>
+                    <!-- โหมดแปลงภาพจากภาพต้นฉบับ -->
                     <button type="button" class="mode-tab" data-mode="img2img"><span class="tab-icon">🖌️</span> Image to Image</button>
+                    <!-- โหมดเบลอภาพ -->
                     <button type="button" class="mode-tab" data-mode="blur"><span class="tab-icon">💧</span> Blur</button>
+                    <!-- โหมดตรวจจับเส้นขอบภาพ -->
                     <button type="button" class="mode-tab" data-mode="canny"><span class="tab-icon">✏️</span> Canny</button>
+                    <!-- โหมดตรวจจับวัตถุในภาพ -->
                     <button type="button" class="mode-tab" data-mode="detection"><span class="tab-icon">📦</span> Objects Detection</button>
                 </div>
 
                 <div class="two-column-layout">
+                    <!-- คอลัมน์ซ้าย: ฟอร์มตั้งค่าและสั่งประมวลผล -->
                     <div class="left-panel">
-                        <!-- Generation Form -->
+                        <!-- ===== ฟอร์มสร้างภาพและประมวลผล ===== -->
                     <div class="form-card">
                         <form id="generate-form">
-                            <!-- 1. ส่วนเลือก Model -->
+                            <!-- ตัวเลือกโมเดล AI (ใช้ในโหมด Text to Image และ Image to Image) -->
                             <div class="form-group" id="group-model">
                                 <label class="group-label">เลือกโมเดล (Base Model)</label>
                                 <div class="btn-selector-group" id="model-selector">
@@ -64,7 +74,7 @@
                                 </div>
                             </div>
 
-                            <!-- 3. ส่วนอัปโหลดรูปภาพ -->
+                            <!-- ส่วนอัปโหลดรูปภาพต้นฉบับ (ใช้ในโหมด Image to Image, Blur, Canny, Objects Detection) -->
                             <div class="form-group" id="group-upload" style="display: none;">
                                 <label class="group-label">อัปโหลดภาพต้นฉบับ</label>
                                 <div class="upload-area" id="upload-area">
@@ -80,7 +90,7 @@
                                 </div>
                             </div>
 
-                            <!-- 4. ส่วน Prompt -->
+                            <!-- ส่วนกรอกคำสั่ง Prompt (ใช้ในโหมด Text to Image และ Image to Image) -->
                             <div id="group-prompts">
                                 <div class="form-group">
                                     <label for="prompt-input" class="group-label">Prompt (คำอธิบายภาพ)</label>
@@ -92,19 +102,19 @@
                                 </div>
                             </div>
 
-                            <!-- 5. ส่วน Blur Strength -->
+                            <!-- ตั้งค่าระดับความเบลอ (เฉพาะโหมด Blur) -->
                             <div class="form-group" id="group-blur-strength" style="display: none;">
                                 <label for="blur-input" class="group-label">Blur strength (ระดับความเบลอ)</label>
                                 <input type="number" id="blur-input" value="15" min="1" max="100">
                             </div>
 
-                            <!-- 5.0 ส่วน Strength (Image to Image) -->
+                            <!-- ตั้งค่าความแรงในการเปลี่ยนภาพ (เฉพาะโหมด Image to Image) -->
                             <div class="form-group" id="group-strength" style="display: none;">
                                 <label class="group-label">ความแรงในการเปลี่ยนภาพ (Denoising Strength): <span id="strength-val">0.60</span></label>
                                 <input type="range" id="strength-input" class="form-range" min="0.1" max="1.0" step="0.05" value="0.6" oninput="document.getElementById('strength-val').innerText = parseFloat(this.value).toFixed(2)" style="width: 100%;">
                             </div>
 
-                            <!-- 5.1 ส่วน Canny -->
+                            <!-- ตั้งค่าขอบเขตเส้นขอบ (เฉพาะโหมด Canny) -->
                             <div id="group-canny" style="display: none;">
                                 <div style="display: flex; gap: 20px;">
                                     <div class="form-group" style="flex: 1;">
@@ -118,7 +128,7 @@
                                 </div>
                             </div>
 
-                            <!-- 5.2 ส่วน Object Detection -->
+                            <!-- ตั้งค่าความแม่นยำในการตรวจจับวัตถุ (เฉพาะโหมด Objects Detection) -->
                             <div id="group-detection" style="display: none;">
                                 <div class="form-group">
                                     <div style="display: flex; justify-content: space-between;">
@@ -128,7 +138,7 @@
                                 </div>
                             </div>
 
-                            <!-- 7. ส่วน Seed -->
+                            <!-- ส่วนสุ่มและกำหนด Seed สำหรับควบคุมผลลัพธ์ภาพ -->
                             <div class="form-group" id="group-seed">
                                 <label for="seed-input" class="group-label">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
                                 <div class="seed-input-wrapper" style="display: flex; gap: 10px;">
@@ -137,6 +147,7 @@
                                 </div>
                             </div>
 
+                            <!-- ปุ่มกดยืนยันเพื่อสั่งสร้างหรือประมวลผลภาพ -->
                             <button type="submit" id="submit-btn" class="primary-btn">
                                 <span id="btn-text">สร้างภาพ</span>
                                 <div id="btn-loader" class="loader" style="display: none;"></div>
@@ -145,10 +156,12 @@
                     </div>
                 </div>
 
+                <!-- คอลัมน์ขวา: ส่วนแสดงภาพผลลัพธ์ -->
                 <div class="right-panel">
-                    <!-- Result Output -->
+                    <!-- ===== ส่วนแสดงผลลัพธ์ภาพและปุ่มจัดการ ===== -->
                     <div id="result-container" class="form-card result-container" style="padding: 24px;">
                         <div class="image-box" style="position: relative; min-height: 450px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 20px; transition: 0.3s ease;">
+                            <!-- ข้อความและไอคอนตอนยังไม่มีภาพผลลัพธ์หรือกำลังโหลด -->
                             <div id="placeholder-content" style="color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1;">
                                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;">
                                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -157,12 +170,15 @@
                                 </svg>
                                 <span id="placeholder-text" style="font-size: 15px; font-weight: 500; letter-spacing: 0.5px;">ภาพผลลัพธ์จะปรากฏที่นี่</span>
                             </div>
+                            <!-- รูปภาพผลลัพธ์ที่ได้จาก AI -->
                             <img id="output-image" src="" alt="AI Generated Output" style="display: none; width: 100%; height: auto; max-height: 600px; object-fit: contain; position: relative; z-index: 2; border-radius: 18px;">
+                            <!-- ปุ่มดาวน์โหลดภาพและปุ่มกดถูกใจเพื่อบันทึกลงแกลเลอรี่ -->
                             <div id="result-actions" style="display: none; gap: 12px; position: absolute; bottom: 20px; right: 20px; z-index: 3;">
                                 <a id="download-btn" href="#" download="forge_ai_image.png" title="ดาวน์โหลดรูปลงเครื่อง" style="display: flex; width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; text-decoration: none; align-items: center; justify-content: center; transition: 0.2s ease;">📥</a>
                                 <button type="button" id="like-btn" title="บันทึกลงแกลเลอรี่" style="display: flex; width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; cursor: pointer; transition: 0.2s ease; align-items: center; justify-content: center;">🤍</button>
                             </div>
                         </div>
+                        <!-- ข้อความแสดง Seed และผลการตรวจจับวัตถุ -->
                         <p class="seed-used-text" id="seed-display-text" style="display: none; margin-top: 15px;">Seed ที่ใช้: <span id="used-seed-display">-</span></p>
                         <p class="seed-used-text" id="detect-result-text" style="display: none; margin-top: 15px;"></p>
                     </div>
@@ -170,11 +186,13 @@
             </div>
         </main>
     </div>
+    <!-- ===== โหลดสคริปต์การทำงาน ===== -->
     <script src="config.js"></script>
     <script src="script.js"></script>
-    <!-- โมดูลตรวจจับวัตถุ (MediaPipe) อยู่ในโฟลเดอร์ ai/ ดึงผ่าน Gateway แล้วโหลดแบบ type="module" -->
+    <!-- โหลดโมดูล MediaPipe สำหรับตรวจจับวัตถุ -->
     <script>
         (function () {
+            // ดึงไฟล์โมดูลตรวจจับวัตถุจาก Backend API
             const s = document.createElement('script');
             s.type = 'module';
             s.src = API_BASE + '/api/ai/object-detector-module.js';
