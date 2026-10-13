@@ -20,64 +20,64 @@
       <p style="margin-bottom: 24px; color: var(--c-text-mut); font-size: 14px;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
 
       <!-- ฟอร์มกรอกข้อมูลลงทะเบียน -->
-      <form id="register-form" onsubmit="handleRegister(event)" style="text-align: left;">
+      <form id="register-form" onsubmit="handleRegister(event)" style="text-align: left;"> <!-- เมื่อกด Submit จะเรียกฟังก์ชัน handleRegister(event) เพื่อส่งข้อมูลสมัครสมาชิก -->
         <!-- ช่องกรอกชื่อผู้ใช้ -->
         <div class="form-group">
           <label for="username" class="group-label">ชื่อผู้ใช้ (Username)</label>
-          <input type="text" id="username" placeholder="ชื่อของคุณ" required>
+          <input type="text" id="username" placeholder="ชื่อของคุณ" required> <!-- ช่องกรอกชื่อผู้ใช้ (Username) -->
         </div>
 
         <!-- ช่องกรอกอีเมล -->
         <div class="form-group">
           <label for="email" class="group-label">อีเมล (Email)</label>
-          <input type="email" id="email" placeholder="your@email.com" required>
+          <input type="email" id="email" placeholder="your@email.com" required> <!-- ช่องกรอกอีเมลสำหรับสมัครสมาชิก -->
         </div>
 
         <!-- ช่องกรอกรหัสผ่าน -->
         <div class="form-group">
           <label for="password" class="group-label">รหัสผ่าน (Password)</label>
-          <input type="password" id="password" placeholder="••••••••" required>
+          <input type="password" id="password" placeholder="••••••••" required> <!-- ช่องกรอกรหัสผ่าน (Password) -->
         </div>
 
         <!-- ปุ่มกดเพื่อลงทะเบียน -->
-        <button type="submit" class="primary-btn" style="margin-top: 10px;">
+        <button type="submit" class="primary-btn" style="margin-top: 10px;"> <!-- [ปุ่มกดยืนยันลงทะเบียน] ส่งข้อมูลไปยัง API: /api/register หากสำเร็จจะนำทางไปหน้า index.html -->
           ลงทะเบียน
         </button>
       </form>
 
       <!-- ลิงก์สลับไปหน้าเข้าสู่ระบบ -->
       <div class="auth-footer">
-        มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a>
+        มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a> <!-- [ลิงก์กด] นำทางย้อนกลับไปหน้า: index.html (หน้าเข้าสู่ระบบ) -->
       </div>
     </div>
   </div>
 
   <!-- ===== สคริปต์เชื่อมต่อ Backend สำหรับสมัครสมาชิก ===== -->
-  <script src="config.js"></script>
+  <script src="config.js"></script> <!-- โหลดการตั้งค่า URL ของ Backend (API_BASE) -->
   <script>
     // ฟังก์ชันย่อสำหรับดึง Element ตาม id
-    const $ = id => document.getElementById(id);
+    const $ = id => document.getElementById(id); // คืนค่า Element ตาม id ที่ระบุ
 
     // ส่งข้อมูลสมัครสมาชิกไป Backend สำเร็จแล้วจะพาไปหน้าเข้าสู่ระบบ
     async function handleRegister(e) {
-      e.preventDefault();
-      const btn = e.target.querySelector('button[type="submit"]');
-      btn.disabled = true;
+      e.preventDefault(); // ป้องกันหน้าเว็บรีโหลดจากการ submit ฟอร์ม
+      const btn = e.target.querySelector('button[type="submit"]'); // ดึง element ปุ่ม submit
+      btn.disabled = true; // ปิดการใช้งานปุ่มเพื่อป้องกันการส่งข้อมูลซ้ำ
       try {
-        const res = await fetch(API_BASE + '/api/register', {
+        const res = await fetch(API_BASE + '/api/register', { // ส่งคำขอ POST เพื่อสมัครสมาชิกไปยัง API: /api/register
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: $('username').value, email: $('email').value, password: $('password').value })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'สมัครสมาชิกไม่สำเร็จ');
-        alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
-        window.location.href = 'index.html';
+        if (!res.ok) throw new Error(data.error || 'สมัครสมาชิกไม่สำเร็จ'); // โยน Error หากการสมัครไม่สำเร็จ
+        alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ'); // แจ้งเตือนข้อความสำเร็จ
+        window.location.href = 'index.html'; // [จุดนำทางหลัก] ย้ายหน้าเว็บไปยัง: index.html (หน้าเข้าสู่ระบบ)
       } catch (err) {
         // แจ้งเตือนข้อผิดพลาด (เช่น เซิร์ฟเวอร์ปิดอยู่ หรืออีเมลซ้ำ)
-        alert(err instanceof TypeError ? 'ไม่สามารถเชื่อมต่อ Backend ได้ (server.py ปิดอยู่)' : err.message);
+        alert(err instanceof TypeError ? 'ไม่สามารถเชื่อมต่อ Backend ได้ (server.py ปิดอยู่)' : err.message); // แสดงข้อความ error ให้ผู้ใช้ทราบ
       } finally {
-        btn.disabled = false;
+        btn.disabled = false; // คืนสถานะปุ่มให้สามารถกดได้ตามปกติ
       }
     }
   </script>

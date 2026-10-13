@@ -19,8 +19,8 @@
             </div>
             <!-- เมนูนำทางไปหน้าต่างๆ -->
             <nav class="nav-menu">
-                <a href="home.html" class="nav-item active"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
-                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="home.html" class="nav-item active"><span class="icon">🎨</span><span>สร้างภาพ</span></a> <!-- [เมนูกด] รีโหลด/อยู่หน้าหลักสร้างภาพ (home.html) -->
+                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a> <!-- [เมนูกด] นำทางไปหน้าแกลเลอรี่รูปภาพ (gallery.html) -->
             </nav>
             <!-- ข้อมูลโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ -->
             <div class="user-profile">
@@ -29,7 +29,7 @@
                     <span class="user-name">—</span>
                     <span class="user-id"></span>
                 </div>
-                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ">
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"> <!-- [ปุ่มกดยืนยัน] ออกจากระบบ ล้าง Token และนำทางไปหน้า index.html -->
                     <span class="icon">🚪</span>
                 </a>
             </div>
@@ -48,15 +48,15 @@
                 <!-- ===== แถบเลือกโหมดการทำงาน ===== -->
                 <div class="mode-tabs" id="mode-selector">
                     <!-- โหมดสร้างภาพจากข้อความ -->
-                    <button type="button" class="mode-tab active" data-mode="text2img"><span class="tab-icon">⚡</span> Text to Image</button>
+                    <button type="button" class="mode-tab active" data-mode="text2img"><span class="tab-icon">⚡</span> Text to Image</button> <!-- [ปุ่มเลือกโหมด] สลับไปใช้โหมดสร้างภาพจากข้อความ Prompt (Text to Image) -->
                     <!-- โหมดแปลงภาพจากภาพต้นฉบับ -->
-                    <button type="button" class="mode-tab" data-mode="img2img"><span class="tab-icon">🖌️</span> Image to Image</button>
+                    <button type="button" class="mode-tab" data-mode="img2img"><span class="tab-icon">🖌️</span> Image to Image</button> <!-- [ปุ่มเลือกโหมด] สลับไปใช้โหมดแปลงรูปภาพตาม Prompt และรูปต้นฉบับ (Image to Image) -->
                     <!-- โหมดเบลอภาพ -->
-                    <button type="button" class="mode-tab" data-mode="blur"><span class="tab-icon">💧</span> Blur</button>
+                    <button type="button" class="mode-tab" data-mode="blur"><span class="tab-icon">💧</span> Blur</button> <!-- [ปุ่มเลือกโหมด] สลับไปใช้โหมดเบลอภาพด้วย OpenCV (Blur) -->
                     <!-- โหมดตรวจจับเส้นขอบภาพ -->
-                    <button type="button" class="mode-tab" data-mode="canny"><span class="tab-icon">✏️</span> Canny</button>
+                    <button type="button" class="mode-tab" data-mode="canny"><span class="tab-icon">✏️</span> Canny</button> <!-- [ปุ่มเลือกโหมด] สลับไปใช้โหมดสกัดเส้นขอบด้วย OpenCV (Canny Edge) -->
                     <!-- โหมดตรวจจับวัตถุในภาพ -->
-                    <button type="button" class="mode-tab" data-mode="detection"><span class="tab-icon">📦</span> Objects Detection</button>
+                    <button type="button" class="mode-tab" data-mode="detection"><span class="tab-icon">📦</span> Objects Detection</button> <!-- [ปุ่มเลือกโหมด] สลับไปใช้โหมดตรวจจับวัตถุในภาพด้วย MediaPipe (Objects Detection) -->
                 </div>
 
                 <div class="two-column-layout">
@@ -69,8 +69,8 @@
                             <div class="form-group" id="group-model">
                                 <label class="group-label">เลือกโมเดล (Base Model)</label>
                                 <div class="btn-selector-group" id="model-selector">
-                                    <button type="button" class="pill-btn model-btn active" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button>
-                                    <button type="button" class="pill-btn model-btn" data-value="sd_manmaruMix_v30">sd_manmaruMix_v30</button>
+                                    <button type="button" class="pill-btn model-btn active" data-value="sd_animagineXL40_v4Opt">sd_animagineXL40_v4Opt</button> <!-- [ปุ่มเลือกโมเดล] เลือกโมเดล sd_animagineXL40_v4Opt (อนิเมะ) สำหรับสร้างภาพ -->
+                                    <button type="button" class="pill-btn model-btn" data-value="sd_manmaruMix_v30">sd_manmaruMix_v30</button> <!-- [ปุ่มเลือกโมเดล] เลือกโมเดล sd_manmaruMix_v30 สำหรับสร้างภาพ -->
                                 </div>
                             </div>
 
@@ -78,14 +78,14 @@
                             <div class="form-group" id="group-upload" style="display: none;">
                                 <label class="group-label">อัปโหลดภาพต้นฉบับ</label>
                                 <div class="upload-area" id="upload-area">
-                                    <input type="file" id="source-image-input" accept="image/*" hidden>
-                                    <label for="source-image-input" class="upload-label" id="upload-label">
+                                    <input type="file" id="source-image-input" accept="image/*" hidden> <!-- ตัวเลือกไฟล์: เปิดหน้าต่างเลือกไฟล์รูปภาพจากอุปกรณ์ผู้ใช้ -->
+                                    <label for="source-image-input" class="upload-label" id="upload-label"> <!-- [ปุ่มคลิกอัปโหลด] กดเพื่อเลือกไฟล์รูปภาพจากอุปกรณ์ขึ้นมาประมวลผล -->
                                         <span class="upload-icon">📤</span>
                                         <span class="upload-text">คลิกเพื่ออัปโหลดรูปภาพที่นี่</span>
                                     </label>
                                     <div id="image-preview-container" style="display: none; position: relative; text-align: center;">
                                         <img id="source-image-preview" src="" alt="Preview">
-                                        <button type="button" id="remove-image-btn" class="remove-btn">✕ ลบรูปภาพ</button>
+                                        <button type="button" id="remove-image-btn" class="remove-btn">✕ ลบรูปภาพ</button> <!-- [ปุ่มกดยกเลิกภาพ] ลบรูปภาพต้นฉบับที่เลือกไว้และรีเซ็ตกล่องอัปโหลด -->
                                     </div>
                                 </div>
                             </div>
@@ -142,13 +142,13 @@
                             <div class="form-group" id="group-seed">
                                 <label for="seed-input" class="group-label">Seed (ค่าคงที่สำหรับควบคุมภาพ)</label>
                                 <div class="seed-input-wrapper" style="display: flex; gap: 10px;">
-                                    <input type="number" id="seed-input" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า" style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg);">
-                                    <button type="button" id="random-seed-btn" class="secondary-btn">🎲 สุ่มใหม่</button>
+                                    <input type="number" id="seed-input" value="-1" placeholder="ใส่ -1 เพื่อสุ่มค่า" style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg);"> <!-- ช่องกรอกค่าคงที่ Seed สำหรับควบคุมผลลัพธ์ภาพ (-1 คือสุ่ม) -->
+                                    <button type="button" id="random-seed-btn" class="secondary-btn">🎲 สุ่มใหม่</button> <!-- [ปุ่มกดสุ่ม] รีเซ็ตค่า Seed เป็น -1 เพื่อให้ระบบสุ่มภาพใหม่ -->
                                 </div>
                             </div>
 
                             <!-- ปุ่มกดยืนยันเพื่อสั่งสร้างหรือประมวลผลภาพ -->
-                            <button type="submit" id="submit-btn" class="primary-btn">
+                            <button type="submit" id="submit-btn" class="primary-btn"> <!-- [ปุ่มกดยืนยันสั่งงาน] ส่งคำขอประมวลผลภาพไปยังเซิร์ฟเวอร์ Backend และแสดงผลลัพธ์ที่ฝั่งขวา -->
                                 <span id="btn-text">สร้างภาพ</span>
                                 <div id="btn-loader" class="loader" style="display: none;"></div>
                             </button>
@@ -174,8 +174,8 @@
                             <img id="output-image" src="" alt="AI Generated Output" style="display: none; width: 100%; height: auto; max-height: 600px; object-fit: contain; position: relative; z-index: 2; border-radius: 18px;">
                             <!-- ปุ่มดาวน์โหลดภาพและปุ่มกดถูกใจเพื่อบันทึกลงแกลเลอรี่ -->
                             <div id="result-actions" style="display: none; gap: 12px; position: absolute; bottom: 20px; right: 20px; z-index: 3;">
-                                <a id="download-btn" href="#" download="forge_ai_image.png" title="ดาวน์โหลดรูปลงเครื่อง" style="display: flex; width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; text-decoration: none; align-items: center; justify-content: center; transition: 0.2s ease;">📥</a>
-                                <button type="button" id="like-btn" title="บันทึกลงแกลเลอรี่" style="display: flex; width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; cursor: pointer; transition: 0.2s ease; align-items: center; justify-content: center;">🤍</button>
+                                <a id="download-btn" href="#" download="forge_ai_image.png" title="ดาวน์โหลดรูปลงเครื่อง" style="display: flex; width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; text-decoration: none; align-items: center; justify-content: center; transition: 0.2s ease;">📥</a> <!-- [ปุ่มดาวน์โหลด] คลิกเพื่อดาวน์โหลดไฟล์ภาพผลลัพธ์ลงเครื่องคอมพิวเตอร์ -->
+                                <button type="button" id="like-btn" title="บันทึกลงแกลเลอรี่" style="display: flex; width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-size: 20px; cursor: pointer; transition: 0.2s ease; align-items: center; justify-content: center;">🤍</button> <!-- [ปุ่มกดถูกใจ] บันทึกภาพผลลัพธ์ไปยัง API: POST /api/gallery เพื่อเก็บไว้ในหน้า gallery.html -->
                             </div>
                         </div>
                         <!-- ข้อความแสดง Seed และผลการตรวจจับวัตถุ -->
@@ -187,17 +187,17 @@
         </main>
     </div>
     <!-- ===== โหลดสคริปต์การทำงาน ===== -->
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="config.js"></script> <!-- โหลดการตั้งค่า URL ของ Backend (config.js) -->
+    <script src="script.js"></script> <!-- โหลดสคริปต์หลักควบคุมการทำงานของระบบ (script.js) -->
     <!-- โหลดโมดูล MediaPipe สำหรับตรวจจับวัตถุ -->
     <script>
         (function () {
             // ดึงไฟล์โมดูลตรวจจับวัตถุจาก Backend API
             const s = document.createElement('script');
             s.type = 'module';
-            s.src = API_BASE + '/api/ai/object-detector-module.js';
-            s.onerror = () => { window.__objectDetectorModuleFailed = true; };
-            document.body.appendChild(s);
+            s.src = API_BASE + '/api/ai/object-detector-module.js'; // กำหนดที่อยู่สคริปต์โมดูลตรวจจับวัตถุจากเซิร์ฟเวอร์
+            s.onerror = () => { window.__objectDetectorModuleFailed = true; }; // บันทึกสถานะกรณีโหลดโมดูลไม่สำเร็จ
+            document.body.appendChild(s); // แทรกลงในเอกสารเพื่อเริ่มโหลดสคริปต์
         })();
     </script>
 </body>

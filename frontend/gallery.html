@@ -37,8 +37,8 @@
             <div class="brand"><h1>Forge <span>AI</span></h1></div>
             <!-- เมนูนำทางไปหน้าต่างๆ -->
             <nav class="nav-menu">
-                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
-                <a href="gallery.html" class="nav-item active"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
+                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a> <!-- [เมนูกด] นำทางกลับไปหน้าหลักสร้างภาพ (home.html) -->
+                <a href="gallery.html" class="nav-item active"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a> <!-- [เมนูกด] อยู่หน้านี้/รีโหลดหน้าแกลเลอรี่รูปภาพ (gallery.html) -->
             </nav>
             <!-- ข้อมูลโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ -->
             <div class="user-profile">
@@ -47,7 +47,7 @@
                     <span class="user-name">—</span>
                     <span class="user-id"></span>
                 </div>
-                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a> <!-- [ปุ่มกดยืนยัน] ออกจากระบบ ล้าง Token และนำทางไปหน้า index.html -->
             </div>
         </aside>
 
@@ -67,33 +67,33 @@
     </div>
 
     <!-- ===== กล่องป๊อปอัปรายละเอียดรูปภาพ (Modal) ===== -->
-    <div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this) closeDetail()">
+    <div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this) closeDetail()"> <!-- คลิกพื้นหลังภายนอก: ปิดหน้าต่างป๊อปอัปรายละเอียดรูปภาพ closeDetail() -->
         <div class="detail-card">
             <!-- แสดงรูปภาพขนาดใหญ่ -->
             <div class="detail-image"><img id="detail-img" src="" alt=""></div>
             <!-- แสดงข้อมูลพารามิเตอร์ของภาพ -->
             <div class="detail-info">
-                <button class="detail-close" onclick="closeDetail()">✕</button>
+                <button class="detail-close" onclick="closeDetail()">✕</button> <!-- [ปุ่มปิด] ปิดหน้าต่างป๊อปอัปรายละเอียดรูปภาพ closeDetail() -->
                 <div class="detail-row"><div class="label">โหมด</div><div class="value" id="detail-mode"></div></div>
                 <div class="detail-row"><div class="label">Prompt</div><div class="value" id="detail-prompt"></div></div>
                 <div class="detail-row"><div class="label">Negative Prompt</div><div class="value" id="detail-negative"></div></div>
                 <div class="detail-row"><div class="label">Model</div><div class="value" id="detail-model"></div></div>
                 <div class="detail-row"><div class="label">Seed</div><div class="value" id="detail-seed"></div></div>
                 <div class="detail-row"><div class="label">บันทึกเมื่อ</div><div class="value" id="detail-date"></div></div>
-                <button class="primary-btn" style="background:#ef4444;" id="detail-delete-btn">ลบรูปนี้</button>
+                <button class="primary-btn" style="background:#ef4444;" id="detail-delete-btn">ลบรูปนี้</button> <!-- [ปุ่มลบภาพ] เรียกฟังก์ชัน removeImage() เพื่อส่งคำขอลบรูปไปยัง API: DELETE /api/gallery/:id -->
             </div>
         </div>
     </div>
 
     <!-- ===== สคริปต์โหลดและจัดการแกลเลอรี่ ===== -->
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="config.js"></script> <!-- โหลดการตั้งค่า URL ของ Backend (config.js) -->
+    <script src="script.js"></script> <!-- โหลดสคริปต์หลักควบคุมการทำงานของระบบ (script.js) -->
     <script>
         // รายการรูปภาพทั้งหมดที่ดึงมาจากเซิร์ฟเวอร์
         let galleryItems = [];
         
         // ปิดหน้าต่างรายละเอียดรูปภาพ
-        const closeDetail = () => $('detail-overlay').classList.remove('open');
+        const closeDetail = () => $('detail-overlay').classList.remove('open'); // ปิด Modal โดยเอาคลาส open ออก
 
         // แสดงค่าในช่องรายละเอียด (ถ้าไม่มีค่าจะแสดงเครื่องหมายขีด)
         function setField(id, value) {
@@ -111,14 +111,14 @@
                 mode: (item.mode || '').toUpperCase(), prompt: item.prompt, negative: item.negative_prompt,
                 model: item.model, seed: item.seed, date: new Date(item.created_at).toLocaleString('th-TH'),
             }).forEach(([key, value]) => setField(`detail-${key}`, value));
-            $('detail-delete-btn').onclick = () => removeImage(item.id);
+            $('detail-delete-btn').onclick = () => removeImage(item.id); // ผูกคำสั่งลบรูปภาพตาม ID ที่กำลังเปิดดู
             $('detail-overlay').classList.add('open');
         }
 
         // โหลดรายการรูปภาพทั้งหมดของผู้ใช้จาก Backend
         async function loadGallery() {
             try {
-                galleryItems = (await api('/api/gallery')).items || [];
+                galleryItems = (await api('/api/gallery')).items || []; // เรียก Backend API: GET /api/gallery เพื่อดึงรายการรูปภาพทั้งหมดของผู้ใช้
                 render();
             } catch (err) {
                 if (err.status === 401) return;   // api() พาไปหน้า login แล้ว
@@ -137,11 +137,11 @@
                     <h3 style="margin-bottom:10px;">ยังไม่มีภาพที่บันทึกไว้</h3>
                     <p style="color:var(--c-text-mut); font-size:14px;">ภาพที่คุณกดถูกใจ (🤍) ในหน้า "สร้างภาพ" จะมาปรากฏที่นี่</p>
                     <br>
-                    <a href="home.html" class="secondary-btn" style="text-decoration:none; padding:10px 20px; display:inline-block;">กลับไปสร้างภาพ</a>
+                    <a href="home.html" class="secondary-btn" style="text-decoration:none; padding:10px 20px; display:inline-block;">กลับไปสร้างภาพ</a> <!-- [ลิงก์กด] นำทางกลับไปยังหน้าสร้างภาพ (home.html) -->
                 </div>` : `
                 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;">
                     ${galleryItems.map(item => `
-                    <div class="form-card gallery-card" style="padding:15px; text-align:center; position:relative;" onclick="openDetail(${item.id})">
+                    <div class="form-card gallery-card" style="padding:15px; text-align:center; position:relative;" onclick="openDetail(${item.id})"> <!-- [การ์ดรูปภาพ] คลิกเพื่อเปิด Modal ดูรายละเอียดของรูปภาพใบนี้ openDetail(id) -->
                         <img src="${item.image_url}" style="width:100%; border-radius:12px; object-fit:contain; margin-bottom:10px; border:1px solid var(--c-border);">
                         <div style="font-size:12px; color:var(--c-text-mut); display:flex; justify-content:space-between;">
                             <span>โหมด: ${String(item.mode || '-').toUpperCase()}</span>
@@ -155,7 +155,7 @@
         async function removeImage(id) {
             if (!confirm('ลบรูปนี้ออกจากแกลเลอรี่?')) return;
             try {
-                await api(`/api/gallery/${id}`, { method: 'DELETE' });
+                await api(`/api/gallery/${id}`, { method: 'DELETE' }); // ส่งคำขอไปยัง API: DELETE /api/gallery/:id เพื่อลบรูปภาพออกจากฐานข้อมูล
                 closeDetail();
                 galleryItems = galleryItems.filter(g => g.id !== id);
                 render();

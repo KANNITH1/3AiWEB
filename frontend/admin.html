@@ -15,9 +15,9 @@
             <div class="brand"><h1>Forge <span>AI</span></h1></div>
             <!-- เมนูนำทางไปหน้าต่างๆ -->
             <nav class="nav-menu">
-                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
-                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
-                <a href="admin.html" class="nav-item active"><span class="icon">🛡️</span><span>จัดการผู้ใช้</span></a>
+                <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a> <!-- [เมนูกด] นำทางไปหน้าสร้างภาพ (home.html) -->
+                <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a> <!-- [เมนูกด] นำทางไปหน้าแกลเลอรี่รูปภาพ (gallery.html) -->
+                <a href="admin.html" class="nav-item active"><span class="icon">🛡️</span><span>จัดการผู้ใช้</span></a> <!-- [เมนูกด] อยู่หน้านี้/รีโหลดหน้าจัดการผู้ใช้ (admin.html) -->
             </nav>
             <!-- ข้อมูลโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ -->
             <div class="user-profile">
@@ -26,7 +26,7 @@
                     <span class="user-name">—</span>
                     <span class="user-id"></span>
                 </div>
-                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
+                <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a> <!-- [ปุ่มกดยืนยัน] ออกจากระบบ ล้าง Token และนำทางไปหน้า index.html -->
             </div>
         </aside>
 
@@ -44,7 +44,7 @@
                 <div class="form-card" id="users-card">
                     <!-- แถบค้นหาและแสดงจำนวนผู้ใช้ -->
                     <div class="toolbar">
-                        <input type="text" id="search-input" placeholder="ค้นหา username หรือ email...">
+                        <input type="text" id="search-input" placeholder="ค้นหา username หรือ email..."> <!-- ช่องกรอกค้นหา: กรองรายชื่อผู้ใช้แบบเรียลไทม์ตาม username หรือ email -->
                         <span class="count" id="user-count"></span>
                     </div>
                     <!-- ตารางรายชื่อผู้ใช้ทั้งหมด -->
@@ -94,14 +94,14 @@
             <p class="modal-error" id="edit-error"></p>
             <!-- ปุ่มบันทึกและยกเลิก -->
             <div class="modal-buttons">
-                <button class="primary-btn" id="edit-save-btn">บันทึก</button>
-                <button class="secondary-btn" id="edit-cancel-btn">ยกเลิก</button>
+                <button class="primary-btn" id="edit-save-btn">บันทึก</button> <!-- [ปุ่มกดบันทึก] ส่งข้อมูลแก้ไขไปยัง API: PUT /api/admin/users/:id และอัปเดตตารางผู้ใช้ -->
+                <button class="secondary-btn" id="edit-cancel-btn">ยกเลิก</button> <!-- [ปุ่มกดยกเลิก] ปิดหน้าต่าง Modal แก้ไขข้อมูลผู้ใช้ closeEdit() -->
             </div>
         </div>
     </div>
 
     <!-- ===== โหลดสคริปต์การทำงาน ===== -->
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="config.js"></script> <!-- โหลดการตั้งค่า URL ของ Backend (config.js) -->
+    <script src="script.js"></script> <!-- โหลดสคริปต์หลักควบคุมการทำงานของระบบ (script.js) -->
 </body>
 </html>
