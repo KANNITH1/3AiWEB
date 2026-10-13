@@ -30,8 +30,8 @@ TIMEOUT = 200   # ต้องมากกว่า GEN_TIMEOUT (180) ใน cha
 # ⚠️ ต้องตรงกับ SECRET_KEY ใน auth.py ไม่งั้น token จะถอดไม่ผ่าน
 SECRET_KEY = os.environ.get("FORGE_SECRET_KEY", "dev-secret-change-me")
 
-RESPONSE_DELAY_SECONDS = 3
-LOGIN_MAX_FAILURES, LOGIN_WINDOW_SECONDS, LOGIN_LOCKOUT_SECONDS = 5, 60, 60
+RESPONSE_DELAY_SECONDS = 2
+LOGIN_MAX_FAILURES, LOGIN_WINDOW_SECONDS, LOGIN_LOCKOUT_SECONDS = 5, 30, 30
 
 # field ที่ต้องมีในแต่ละ endpoint (เฉพาะ POST)
 REQUIRED = {
@@ -201,7 +201,7 @@ def login():
 
 
 @app.route("/api/ai/object-detector-module.js")
-def object_detector_module():
+def object_detector_module():   
     """ไฟล์ JS ตรวจจับวัตถุอยู่ที่ ai/ ส่งผ่านที่นี่ให้ origin เดียวกับหน้าเว็บ"""
     try:
         r = requests.get(f"{CHAT_URL}/api/ai/object-detector-module.js", timeout=15)
