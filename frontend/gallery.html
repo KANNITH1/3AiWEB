@@ -6,6 +6,7 @@
     <title>Gallery - Forge AI</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- ===== สไตล์เฉพาะสำหรับกล่องแสดงรายละเอียดรูปภาพ ===== -->
     <style>
         /* กล่องรายละเอียดรูป (เปิดตอนคลิกรูปในแกลเลอรี่) */
         .detail-overlay {
@@ -31,38 +32,46 @@
 </head>
 <body>
     <div class="app-layout">
+        <!-- ===== แถบเมนูด้านข้าง (Sidebar) ===== -->
         <aside class="sidebar">
             <div class="brand"><h1>Forge <span>AI</span></h1></div>
+            <!-- เมนูนำทางไปหน้าต่างๆ -->
             <nav class="nav-menu">
                 <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
                 <a href="gallery.html" class="nav-item active"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
             </nav>
+            <!-- ข้อมูลโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ -->
             <div class="user-profile">
-                <div class="avatar-placeholder" id="avatar-placeholder">--</div>
+                <div class="avatar-placeholder">--</div>
                 <div class="user-info">
-                    <span class="user-name" id="user-name-display">—</span>
-                    <span class="user-id" id="user-email-display">—</span>
+                    <span class="user-name">—</span>
+                    <span class="user-id"></span>
                 </div>
                 <a href="#" onclick="logout(); return false;" class="logout-btn" title="ออกจากระบบ"><span class="icon">🚪</span></a>
             </div>
         </aside>
 
+        <!-- ===== พื้นที่แสดงแกลเลอรี่รูปภาพ ===== -->
         <main class="main-content">
+            <!-- หัวข้อหน้าแกลเลอรี่ -->
             <header class="page-header">
                 <span class="badge-subtitle">MY GALLERY</span>
                 <h2>Image <span class="highlight">Gallery</span></h2>
                 <p>ภาพทั้งหมดที่คุณเคยสร้างและบันทึกไว้</p>
             </header>
+            <!-- กล่องบรรจุรายการการ์ดรูปภาพทั้งหมด -->
             <div class="content-container" id="gallery-container">
                 <p style="color:var(--c-text-mut);">กำลังโหลด...</p>
             </div>
         </main>
     </div>
 
-    <!-- กล่องรายละเอียดรูป -->
+    <!-- ===== กล่องป๊อปอัปรายละเอียดรูปภาพ (Modal) ===== -->
     <div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this) closeDetail()">
         <div class="detail-card">
+            <!-- แสดงรูปภาพขนาดใหญ่ -->
             <div class="detail-image"><img id="detail-img" src="" alt=""></div>
+            <!-- แสดงข้อมูลพารามิเตอร์ของภาพ -->
             <div class="detail-info">
                 <button class="detail-close" onclick="closeDetail()">✕</button>
                 <div class="detail-row"><div class="label">โหมด</div><div class="value" id="detail-mode"></div></div>
@@ -76,20 +85,24 @@
         </div>
     </div>
 
+    <!-- ===== สคริปต์โหลดและจัดการแกลเลอรี่ ===== -->
     <script src="config.js"></script>
     <script src="script.js"></script>
     <script>
-        let galleryItems = [];   // รูปทั้งหมดของผู้ใช้ (จาก GET /api/gallery) ชื่อผู้ใช้ใน sidebar ใส่โดย script.js
+        // รายการรูปภาพทั้งหมดที่ดึงมาจากเซิร์ฟเวอร์
+        let galleryItems = [];
+        
+        // ปิดหน้าต่างรายละเอียดรูปภาพ
         const closeDetail = () => $('detail-overlay').classList.remove('open');
 
-        /** ใส่ค่าในช่องรายละเอียด ถ้าไม่มีค่าแสดง "—" แบบสีจาง */
+        // แสดงค่าในช่องรายละเอียด (ถ้าไม่มีค่าจะแสดงเครื่องหมายขีด)
         function setField(id, value) {
             const empty = value === null || value === undefined || value === '';
             $(id).textContent = empty ? '—' : value;
             $(id).classList.toggle('empty', empty);
         }
 
-        /** เปิดกล่องรายละเอียดของรูป (คลิกการ์ดในแกลเลอรี่) */
+        // เปิดหน้าต่างรายละเอียดเมื่อคลิกการ์ดรูปภาพ
         function openDetail(id) {
             const item = galleryItems.find(g => g.id === id);
             if (!item) return;
@@ -102,6 +115,7 @@
             $('detail-overlay').classList.add('open');
         }
 
+        // โหลดรายการรูปภาพทั้งหมดของผู้ใช้จาก Backend
         async function loadGallery() {
             try {
                 galleryItems = (await api('/api/gallery')).items || [];
@@ -115,7 +129,7 @@
             }
         }
 
-        /** วาดการ์ดรูปทั้งหมด (หรือข้อความ "ยังไม่มีภาพ" ถ้าว่าง) */
+        // วาดการ์ดรูปภาพทั้งหมดลงในหน้าเว็บ
         function render() {
             $('gallery-container').innerHTML = galleryItems.length === 0 ? `
                 <div class="form-card" style="text-align:center; padding:60px 20px;">
@@ -137,6 +151,7 @@
                 </div>`;
         }
 
+        // ลบรูปภาพออกจากแกลเลอรี่
         async function removeImage(id) {
             if (!confirm('ลบรูปนี้ออกจากแกลเลอรี่?')) return;
             try {
@@ -149,6 +164,7 @@
             }
         }
 
+        // เริ่มโหลดรูปภาพเมื่อหน้าเว็บพร้อมทำงาน
         document.addEventListener('DOMContentLoaded', loadGallery);
     </script>
 </body>

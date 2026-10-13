@@ -5,56 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>เข้าสู่ระบบ — Forge AI</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; padding: 20px; background: var(--c-bg); }
-    .auth-card { width: 100%; max-width: 420px; text-align: center; }
-    .brand { margin-bottom: 10px; }
-    .brand h1 { font-size: 36px; font-weight: 700; color: var(--primary); }
-    .brand h1 span { color: #f97316; }
-    .auth-footer { margin-top: 25px; font-size: 14px; color: var(--c-text-mut); text-align: center; }
-    .auth-footer a { color: var(--primary); text-decoration: none; font-weight: 600; transition: 0.2s; }
-    .auth-footer a:hover { color: #ea580c; }
-  </style>
 </head>
 <body>
 
+  <!-- ===== กล่องฟอร์มเข้าสู่ระบบ ===== -->
   <div class="auth-layout">
     <div class="form-card auth-card">
+      <!-- โลโก้และชื่อระบบ -->
       <div class="brand">
           <h1>Forge <span>AI</span></h1>
       </div>
+      <!-- หัวข้อหน้าเข้าสู่ระบบ -->
       <h2 style="margin-bottom: 8px; font-size: 24px; font-weight: 600;">เข้าสู่ระบบ</h2>
       <p style="margin-bottom: 24px; color: var(--c-text-mut); font-size: 14px;">ยินดีต้อนรับกลับสู่ระบบ</p>
 
+      <!-- ฟอร์มกรอกอีเมลและรหัสผ่าน -->
       <form id="login-form" onsubmit="handleLogin(event)" style="text-align: left;">
+        <!-- ช่องกรอกอีเมล -->
         <div class="form-group">
           <label for="email" class="group-label">อีเมล (Email)</label>
           <input type="email" id="email" placeholder="your@email.com" required>
         </div>
 
+        <!-- ช่องกรอกรหัสผ่าน -->
         <div class="form-group">
           <label for="password" class="group-label">รหัสผ่าน (Password)</label>
           <input type="password" id="password" placeholder="••••••••" required>
         </div>
 
+        <!-- กล่องข้อความแจ้งเตือนเมื่อเข้าสู่ระบบไม่สำเร็จ -->
         <p id="error-message" style="color: #ef4444; font-size: 13px; margin-bottom: 15px; display: none; text-align: center;">อีเมลหรือรหัสผ่านไม่ถูกต้อง</p>
 
+        <!-- ปุ่มกดเพื่อเข้าสู่ระบบ -->
         <button type="submit" class="primary-btn" id="login-btn">
           เข้าสู่ระบบ
         </button>
       </form>
 
+      <!-- ลิงก์สลับไปหน้าสมัครสมาชิก -->
       <div class="auth-footer">
         ยังไม่มีบัญชีใช่ไหม? <a href="register.html">สมัครสมาชิก</a>
       </div>
     </div>
   </div>
 
+  <!-- ===== สคริปต์เชื่อมต่อ Backend สำหรับเข้าสู่ระบบ ===== -->
   <script src="config.js"></script>
   <script>
+    // ฟังก์ชันย่อสำหรับดึง Element ตาม id
     const $ = id => document.getElementById(id);
 
-    // ส่ง email/password ไป Backend (server.py -> auth.py) ถ้าผ่านจะเก็บ token ไว้ใน localStorage ให้ script.js ใช้ต่อ
+    // ส่งอีเมลและรหัสผ่านไปตรวจสอบที่เซิร์ฟเวอร์ ถ้าผ่านจะเก็บ Token และพาไปหน้าหลัก
     async function handleLogin(e) {
       e.preventDefault();
       const error = $('error-message'), btn = $('login-btn');
@@ -70,9 +71,10 @@
           body: JSON.stringify({ email: $('email').value, password: $('password').value })
         });
         const data = await res.json().catch(() => ({}));
-        // รหัสผิด (401) / ถูกล็อกชั่วคราว (429) ฯลฯ -> แสดงข้อความที่ Backend ส่งมา
+        // ถ้าเข้าสู่ระบบไม่ผ่าน ให้แสดงข้อความแจ้งเตือน
         if (!res.ok || !data.token) return fail(data.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีข้อมูลในระบบ');
 
+        // บันทึก Token และข้อมูลผู้ใช้ลงเบราว์เซอร์ แล้วย้ายไปหน้าหลัก
         localStorage.setItem('forge_token', data.token);
         localStorage.setItem('forge_user', JSON.stringify(data.user));
         window.location.href = 'home.html';

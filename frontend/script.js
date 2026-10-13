@@ -1,33 +1,32 @@
-// script.js — โค้ดหน้าเว็บที่ใช้ร่วมกัน (ทุกหน้ายกเว้น index.html / register.html)
-// ส่วนที่ 1: ตัวช่วยทั่วไป + ระบบล็อกอิน   ส่วนที่ 2: หน้าสร้างภาพ (home.html)   ส่วนที่ 3: หน้า admin
-// API_BASE มาจาก config.js
+// ===== โค้ดสคริปต์หลักที่ใช้ร่วมกันในระบบ (script.js) =====
+// ส่วนที่ 1: ระบบล็อกอินและเรียก API | ส่วนที่ 2: หน้าสร้างภาพ (home.html) | ส่วนที่ 3: หน้า admin
 
-const $ = id => document.getElementById(id);   // ย่อ document.getElementById
+// ตัวช่วยย่อสำหรับดึง Element ตาม id
+const $ = id => document.getElementById(id);
 
-/** ซ่อน/แสดง element ตาม id (ข้ามถ้าไม่มี element นั้นในหน้านี้) */
+// แสดงหรือซ่อน Element ตาม id ที่ระบุ
 const show = (id, on, display = 'block') => { if ($(id)) $(id).style.display = on ? display : 'none'; };
 
-// ================= 1) ระบบล็อกอิน =================
-// หน้า login เก็บผลจาก POST /api/login ไว้ใน localStorage: forge_token (JWT) และ forge_user ({id, username, email, role})
+
+// ===== 1. ระบบยืนยันตัวตนและล็อกอิน =====
+
+// ดึง Token จาก localStorage เพื่อใช้แนบกับ Header
 const authHeader = () => {
     const token = localStorage.getItem('forge_token');
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// ล้างข้อมูล Token และผู้ใช้เพื่อออกจากระบบ แล้วกลับไปหน้า login
 function logout() {
     localStorage.removeItem('forge_token');
     localStorage.removeItem('forge_user');
     window.location.href = 'index.html';
 }
 
-// ยังไม่ได้ล็อกอิน -> กลับหน้า login
+// ตรวจสอบสถานะล็อกอิน ถ้าไม่มี Token ให้ย้ายไปหน้า login ทันที
 if (!localStorage.getItem('forge_token')) window.location.replace('index.html');
 
-/**
- * เรียก Backend แนบ token อัตโนมัติ  คืนค่า JSON ที่ตอบกลับ
- * - 401 (token หมดอายุ/บัญชีถูกลบ) -> logout แล้ว throw (err.status = 401)
- * - สถานะอื่นที่ไม่ใช่ 2xx -> throw Error(ข้อความจาก Backend) พร้อม err.status
- */
+// ฟังก์ชันเรียก Backend API พร้อมแนบ Token และจัดการ Error อัตโนมัติ
 async function api(path, { method = 'GET', body } = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
         method,
@@ -40,7 +39,7 @@ async function api(path, { method = 'GET', body } = {}) {
     return data;
 }
 
-/** แสดงชื่อ/อีเมลใน sidebar และเพิ่มเมนู "จัดการผู้ใช้" ถ้าเป็น admin */
+// อัปเดตข้อมูลผู้ใช้ในแถบ Sidebar (ชื่อ, อีเมล และเพิ่มเมนู admin ถ้ามีสิทธิ์)
 function applyUser(user) {
     if (!user) return;
     const name = user.username || user.email || '';
@@ -56,9 +55,10 @@ function applyUser(user) {
     }
 }
 
+// โหลดข้อมูลผู้ใช้เมื่อเริ่มเปิดหน้าเว็บ
 document.addEventListener('DOMContentLoaded', async () => {
     try { applyUser(JSON.parse(localStorage.getItem('forge_user'))); } catch (e) { /* ข้อมูลใน localStorage เสีย ไม่เป็นไร */ }
-    try {   // ดึงข้อมูลล่าสุด (เผื่อ admin เปลี่ยนสิทธิ์/ชื่อ หรือบัญชีถูกลบ) ถ้า Backend ปิดอยู่ก็ใช้ของเดิมไปก่อน
+    try {
         const { user } = await api('/api/me');
         localStorage.setItem('forge_user', JSON.stringify(user));
         applyUser(user);
@@ -66,26 +66,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-// ================= 2) หน้าสร้างภาพ (home.html) =================
-const GEN_MODES = ['text2img', 'img2img'];   // โหมดที่ใช้ Prompt/Seed และสร้างภาพผ่าน Forge
+// ===== 2. ระบบควบคุมหน้าสร้างภาพ (home.html) =====
+
+// โหมดที่ต้องใช้การสร้างภาพผ่าน Prompt/Seed
+const GEN_MODES = ['text2img', 'img2img'];
+// ข้อความบนปุ่มกดตามแต่ละโหมดการทำงาน
 const BUTTON_LABELS = { img2img: 'แปลงภาพ (Image to Image)', canny: 'ตรวจจับขอบ (Canny)', detection: 'ตรวจจับวัตถุ', blur: 'เบลอภาพ' };
 
+// คลาสหลักสำหรับควบคุมการทำงานทั้งหมดในหน้าสร้างภาพ
 class ForgeAIController {
+    // กำหนดค่าเริ่มต้นของระบบสร้างภาพ
     constructor() {
-        this.state = { mode: 'text2img', model: 'sd_animagineXL40_v4Opt', image: null };   // image = data URL ของภาพต้นฉบับ
-        this.lastResult = null;   // ผลล่าสุด ไว้ให้ปุ่มหัวใจบันทึกลงแกลเลอรี่
+        this.state = { mode: 'text2img', model: 'sd_animagineXL40_v4Opt', image: null };
+        this.lastResult = null;
         this.bindEvents();
         this.updateUI();
     }
 
+    // ผูก Event ให้กับปุ่มและฟอร์มต่างๆ ในหน้าสร้างภาพ
     bindEvents() {
         this.bindChoice('.mode-tab', 'mode');
         this.bindChoice('.model-btn', 'model');
-        $('random-seed-btn')?.addEventListener('click', () => $('seed-input').value = -1);   // -1 = ให้ Backend สุ่มเอง
+        $('random-seed-btn')?.addEventListener('click', () => $('seed-input').value = -1);
         $('generate-form')?.addEventListener('submit', e => this.submit(e));
         $('like-btn')?.addEventListener('click', e => this.saveToGallery(e.currentTarget));
 
-        // เลือกภาพต้นฉบับ -> แสดงตัวอย่างและเก็บเป็น data URL
+        // เมื่อเลือกไฟล์รูปภาพต้นฉบับ ให้แปลงเป็น Base64 และแสดงภาพตัวอย่าง
         $('source-image-input')?.addEventListener('change', ({ target }) => {
             if (!target.files[0]) return;
             const reader = new FileReader();
@@ -98,6 +104,7 @@ class ForgeAIController {
             reader.readAsDataURL(target.files[0]);
         });
 
+        // ปุ่มลบรูปภาพต้นฉบับที่อัปโหลดไว้
         $('remove-image-btn')?.addEventListener('click', () => {
             $('source-image-input').value = '';
             this.state.image = null;
@@ -106,7 +113,7 @@ class ForgeAIController {
         });
     }
 
-    /** ปุ่มแบบเลือกได้ทีละอัน: ปุ่มที่กดจะ active และเก็บค่า (data-value หรือ data-mode) ลง state[key] */
+    // สลับสถานะ active ของกลุ่มปุ่มตัวเลือก (เช่น โหมด, โมเดล)
     bindChoice(selector, key) {
         const buttons = document.querySelectorAll(selector);
         buttons.forEach(btn => btn.addEventListener('click', () => {
@@ -116,7 +123,7 @@ class ForgeAIController {
         }));
     }
 
-    /** ซ่อน/แสดงช่องกรอกตามโหมดที่เลือก */
+    // ปรับการแสดงผลฟอร์มให้ตรงกับโหมดที่กำลังเลือก
     updateUI() {
         const m = this.state.mode;
         const gen = GEN_MODES.includes(m);
@@ -131,10 +138,10 @@ class ForgeAIController {
         if ($('btn-text')) $('btn-text').textContent = BUTTON_LABELS[m] || 'สร้างภาพ';
     }
 
-    /** รวมค่าจากฟอร์มเป็น payload ที่ส่งให้ Backend (คืน null ถ้ากรอกไม่ครบ พร้อมแจ้งผู้ใช้) */
+    // รวบรวมข้อมูลจากฟอร์มเพื่อเตรียมส่งให้ Backend
     buildPayload() {
         const m = this.state.mode;
-        const num = (id, fallback, parse = parseInt) => parse($(id)?.value) || fallback;   // ค่าว่าง/ไม่ใช่ตัวเลข -> ค่าเริ่มต้น
+        const num = (id, fallback, parse = parseInt) => parse($(id)?.value) || fallback;
         const p = { mode: m, model: this.state.model };
 
         if (GEN_MODES.includes(m)) {
@@ -157,11 +164,12 @@ class ForgeAIController {
 
         if (m !== 'text2img') {
             if (!this.state.image) return alert('กรุณาอัปโหลดรูปภาพต้นฉบับก่อนครับ!');
-            p.init_image = this.state.image.split(',')[1];   // base64 ล้วน (ตัด "data:image/...;base64," ออก)
+            p.init_image = this.state.image.split(',')[1];
         }
         return p;
     }
 
+    // เมื่อกดปุ่ม Submit เพื่อสั่งประมวลผลตามโหมดที่เลือก
     async submit(e) {
         e.preventDefault();
         const payload = this.buildPayload();
@@ -171,14 +179,14 @@ class ForgeAIController {
         this.setLoading(true);
         try {
             let data;
-            if (m === 'detection') data = await this.detectLocal(payload);   // ทำในเบราว์เซอร์ ไม่ผ่าน Backend
+            if (m === 'detection') data = await this.detectLocal(payload);
             else if (m === 'blur' || m === 'canny') data = await this.callCv(m, payload);
             else data = await api('/api/generate', { method: 'POST', body: payload });
 
             if (!data.image_url && !data.image_base64) throw new Error('ไม่พบข้อมูลรูปภาพตอบกลับจาก Backend');
             this.showResult(data, payload);
         } catch (err) {
-            if (err.status === 401) return;   // token หมดอายุ: api() พาไปหน้า login แล้ว ไม่ต้องแจ้งซ้ำ
+            if (err.status === 401) return;
             show('placeholder-content', true, 'flex');
             alert(`เกิดข้อผิดพลาด: ${err.message}\n(ตรวจสอบว่า server.py, chat.py และ Forge Neo รันอยู่หรือไม่)`);
         } finally {
@@ -186,7 +194,7 @@ class ForgeAIController {
         }
     }
 
-    /** แสดงภาพผลลัพธ์ + seed/ผลตรวจจับ + ปุ่มดาวน์โหลด/หัวใจ */
+    // แสดงผลลัพธ์รูปภาพ ข้อมูล Seed และเปิดปุ่มดาวน์โหลด/กดถูกใจ
     showResult(data, payload) {
         const m = payload.mode;
         const gen = GEN_MODES.includes(m);
@@ -195,7 +203,7 @@ class ForgeAIController {
         $('output-image').src = imgSrc;
         show('output-image', true);
         show('placeholder-content', false);
-        show('seed-display-text', gen);   // seed แสดงเฉพาะโหมดสร้างภาพ
+        show('seed-display-text', gen);
         if (gen && data.seed !== undefined) $('used-seed-display').textContent = data.seed;
 
         if ($('detect-result-text')) {
@@ -212,7 +220,6 @@ class ForgeAIController {
         show('result-actions', true, 'flex');
         $('result-container').scrollIntoView({ behavior: 'smooth' });
 
-        // เก็บค่าตอนนี้ไว้ เพราะตอนกดหัวใจผู้ใช้อาจแก้ฟอร์มไปแล้ว ค่าจะไม่ตรงกับภาพที่แสดงอยู่
         this.lastResult = {
             image: imgSrc, mode: m, model: payload.model,
             prompt: payload.prompt, negative_prompt: payload.negative_prompt,
@@ -220,7 +227,7 @@ class ForgeAIController {
         };
     }
 
-    /** Blur/Canny: เรียก /api/blur หรือ /api/canny ถ้า Backend ไม่มี (404/405) ถอยไปใช้ /api/generate พร้อม mode */
+    // เรียก API ประมวลผลภาพสำหรับโหมด Blur และ Canny
     async callCv(m, payload) {
         const body = m === 'blur'
             ? { image: this.state.image, strength: payload.blur_strength }
@@ -233,10 +240,7 @@ class ForgeAIController {
         }
     }
 
-    // ---------- ตรวจจับวัตถุ (MediaPipe ในเบราว์เซอร์) ----------
-    // ตัวตรวจจับอยู่ที่ ai/object-detector-module.js (home.html โหลดเป็น module แล้วเปิด window.runObjectDetection)
-
-    /** รอจนโมดูลตรวจจับวัตถุพร้อมใช้ (โหลดพลาด/นานเกิน -> throw) */
+    // รอจนกว่าโมดูล MediaPipe สำหรับตรวจจับวัตถุจะพร้อมใช้งาน
     waitForDetectorModule(timeoutMs = 15000) {
         return new Promise((resolve, reject) => {
             const t0 = Date.now();
@@ -252,6 +256,7 @@ class ForgeAIController {
         });
     }
 
+    // ประมวลผลตรวจจับวัตถุในเบราว์เซอร์ผ่าน MediaPipe
     async detectLocal(opts) {
         await this.waitForDetectorModule();
         const img = await new Promise((resolve, reject) => {
@@ -265,11 +270,11 @@ class ForgeAIController {
         const t0 = performance.now();
         let result;
         try { result = await window.runObjectDetection(img, { ...settings, delegate: 'GPU' }); }
-        catch { result = await window.runObjectDetection(img, { ...settings, delegate: 'CPU' }); }   // เครื่องที่ไม่รองรับ GPU
+        catch { result = await window.runObjectDetection(img, { ...settings, delegate: 'CPU' }); }
         return { image_url: result.dataUrl, objects: result.objects, ms: Math.round(performance.now() - t0) };
     }
 
-    /** ปุ่มหัวใจ: บันทึกผลล่าสุดลงแกลเลอรี่ (กดซ้ำไม่ได้) */
+    // ปุ่มกดถูกใจ (หัวใจ): บันทึกผลลัพธ์ภาพลงแกลเลอรี่
     async saveToGallery(btn) {
         const r = this.lastResult;
         if (btn.dataset.liked || !r) return;
@@ -286,6 +291,7 @@ class ForgeAIController {
         }
     }
 
+    // ปรับสถานะการโหลดและอนิเมชั่นของปุ่มกด
     setLoading(on) {
         const btn = $('submit-btn');
         if (!btn) return;
@@ -304,18 +310,18 @@ class ForgeAIController {
     }
 }
 
+// เริ่มต้นระบบสร้างภาพเมื่อโหลดหน้า home.html
 document.addEventListener('DOMContentLoaded', () => { if ($('generate-form')) new ForgeAIController(); });
 
 
-// ================= 3) หน้าจัดการผู้ใช้ (admin.html) =================
-// ทำงานเฉพาะหน้าที่มีตาราง #users-body  (สิทธิ์ admin ตรวจที่ Backend จริง ฝั่งนี้แค่แสดงผล)
+// ===== 3. ระบบจัดการผู้ใช้สำหรับ Admin (admin.html) =====
 function initAdminPage() {
     let users = [];
     let editingId = null;
     let me = JSON.parse(localStorage.getItem('forge_user') || 'null');
     const isMe = u => me && u.id === me.id;
 
-    // สร้าง element ด้วย textContent (ไม่ใช้ innerHTML กับข้อมูลผู้ใช้ กัน XSS)
+    // ฟังก์ชันสร้าง DOM Element แบบปลอดภัยเพื่อป้องกัน XSS
     const el = (tag, props = {}, ...children) => {
         const node = Object.assign(document.createElement(tag), props);
         node.append(...children);
@@ -324,6 +330,7 @@ function initAdminPage() {
     const td = (text, props) => el('td', { textContent: text ?? '—', ...props });
     const messageRow = (text, color) => el('tr', {}, td(text, { colSpan: 7, style: `color:${color}` }));
 
+    // โหลดรายชื่อผู้ใช้ทั้งหมดจาก Backend API
     async function loadUsers() {
         try {
             users = (await api('/api/admin/users')).users || [];
@@ -336,6 +343,7 @@ function initAdminPage() {
         }
     }
 
+    // วาดตารางรายชื่อผู้ใช้ตามคำค้นหา
     function renderTable() {
         const q = $('search-input').value.trim().toLowerCase();
         const list = users.filter(u => !q || u.username.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
@@ -344,7 +352,7 @@ function initAdminPage() {
 
         $('users-body').replaceChildren(...list.map(u => {
             const editBtn = el('button', { className: 'secondary-btn', textContent: '✏️ แก้ไข', onclick: () => openEdit(u.id) });
-            const deleteBtn = isMe(u) ? '' :   // ลบตัวเองไม่ได้ จึงไม่แสดงปุ่ม
+            const deleteBtn = isMe(u) ? '' :
                 el('button', { className: 'secondary-btn danger-btn', textContent: '🗑️ ลบ', onclick: () => removeUser(u.id) });
             const nameCell = td(u.username);
             if (isMe(u)) nameCell.append(el('span', { className: 'you', textContent: ' (คุณ)' }));
@@ -359,6 +367,7 @@ function initAdminPage() {
         }));
     }
 
+    // เปิดหน้าต่าง Modal แก้ไขข้อมูลผู้ใช้
     function openEdit(id) {
         const u = users.find(x => x.id === id);
         editingId = id;
@@ -367,23 +376,25 @@ function initAdminPage() {
         $('edit-email').value = u.email || '';
         $('edit-role').value = u.role;
         $('edit-password').value = '';
-        $('edit-role').disabled = !!isMe(u);          // เปลี่ยนสิทธิ์ตัวเองไม่ได้
+        $('edit-role').disabled = !!isMe(u);
         show('edit-role-hint', isMe(u));
         show('edit-error', false);
         $('edit-overlay').classList.add('open');
     }
 
+    // ปิดหน้าต่าง Modal แก้ไขข้อมูลผู้ใช้
     const closeEdit = () => { $('edit-overlay').classList.remove('open'); editingId = null; };
 
+    // บันทึกข้อมูลผู้ใช้ที่แก้ไขไปยัง Backend API
     async function saveEdit() {
         const body = { username: $('edit-username').value.trim(), email: $('edit-email').value.trim() };
         if (!$('edit-role').disabled) body.role = $('edit-role').value;
-        if ($('edit-password').value) body.password = $('edit-password').value;   // ว่าง = ไม่เปลี่ยนรหัส
+        if ($('edit-password').value) body.password = $('edit-password').value;
 
         $('edit-save-btn').disabled = true;
         try {
             const { user } = await api(`/api/admin/users/${editingId}`, { method: 'PUT', body });
-            if (editingId === me?.id) {   // แก้ข้อมูลตัวเอง -> อัปเดต sidebar ด้วย
+            if (editingId === me?.id) {
                 me = user;
                 localStorage.setItem('forge_user', JSON.stringify(me));
                 applyUser(me);
@@ -398,6 +409,7 @@ function initAdminPage() {
         }
     }
 
+    // ลบบัญชีผู้ใช้พร้อมรูปภาพทั้งหมดของผู้ใช้คนนั้น
     async function removeUser(id) {
         const u = users.find(x => x.id === id);
         if (!confirm(`ลบผู้ใช้ "${u.username}" ?\nรูปในแกลเลอรี่ของเขา (${u.gallery_count} รูป) จะถูกลบด้วย และกู้คืนไม่ได้`)) return;
@@ -409,6 +421,7 @@ function initAdminPage() {
         }
     }
 
+    // ผูก Event ให้กับช่องค้นหาและปุ่มในหน้าต่าง Modal
     $('search-input').addEventListener('input', renderTable);
     $('edit-save-btn').addEventListener('click', saveEdit);
     $('edit-cancel-btn').addEventListener('click', closeEdit);
@@ -416,4 +429,5 @@ function initAdminPage() {
     loadUsers();
 }
 
+// เริ่มต้นระบบจัดการผู้ใช้เมื่อโหลดหน้า admin.html
 document.addEventListener('DOMContentLoaded', () => { if ($('users-body')) initAdminPage(); });

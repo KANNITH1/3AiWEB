@@ -9,13 +9,17 @@
 </head>
 <body>
     <div class="app-layout">
+        <!-- ===== แถบเมนูด้านข้าง (Sidebar) ===== -->
         <aside class="sidebar">
+            <!-- โลโก้และชื่อเว็บ -->
             <div class="brand"><h1>Forge <span>AI</span></h1></div>
+            <!-- เมนูนำทางไปหน้าต่างๆ -->
             <nav class="nav-menu">
                 <a href="home.html" class="nav-item"><span class="icon">🎨</span><span>สร้างภาพ</span></a>
                 <a href="gallery.html" class="nav-item"><span class="icon">🖼️</span><span>แกลเลอรี่</span></a>
                 <a href="admin.html" class="nav-item active"><span class="icon">🛡️</span><span>จัดการผู้ใช้</span></a>
             </nav>
+            <!-- ข้อมูลโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ -->
             <div class="user-profile">
                 <div class="avatar-placeholder">--</div>
                 <div class="user-info">
@@ -26,7 +30,9 @@
             </div>
         </aside>
 
+        <!-- ===== พื้นที่แสดงผลข้อมูลผู้ใช้ ===== -->
         <main class="main-content">
+            <!-- หัวข้อหน้าเว็บ -->
             <header class="page-header">
                 <span class="badge-subtitle">ADMIN</span>
                 <h2>จัดการ<span class="highlight">ผู้ใช้</span></h2>
@@ -34,11 +40,14 @@
             </header>
 
             <div class="content-container">
+                <!-- การ์ดแสดงตารางรายชื่อผู้ใช้ -->
                 <div class="form-card" id="users-card">
+                    <!-- แถบค้นหาและแสดงจำนวนผู้ใช้ -->
                     <div class="toolbar">
                         <input type="text" id="search-input" placeholder="ค้นหา username หรือ email...">
                         <span class="count" id="user-count"></span>
                     </div>
+                    <!-- ตารางรายชื่อผู้ใช้ทั้งหมด -->
                     <div class="table-wrap">
                         <table class="users">
                             <thead>
@@ -52,18 +61,21 @@
         </main>
     </div>
 
-    <!-- กล่องแก้ไขผู้ใช้ -->
+    <!-- ===== กล่องป๊อปอัปแก้ไขข้อมูลผู้ใช้ (Modal) ===== -->
     <div class="modal-overlay" id="edit-overlay">
         <div class="modal-card">
             <h3 id="edit-title">แก้ไขผู้ใช้</h3>
+            <!-- ช่องแก้ไขชื่อผู้ใช้ -->
             <div class="form-group">
                 <label class="group-label" for="edit-username">Username</label>
                 <input type="text" id="edit-username" autocomplete="off">
             </div>
+            <!-- ช่องแก้ไขอีเมล -->
             <div class="form-group">
                 <label class="group-label" for="edit-email">Email</label>
                 <input type="email" id="edit-email" autocomplete="off">
             </div>
+            <!-- ช่องเลือกสิทธิ์ผู้ใช้ -->
             <div class="form-group">
                 <label class="group-label" for="edit-role">สิทธิ์</label>
                 <select id="edit-role">
@@ -72,12 +84,15 @@
                 </select>
                 <div class="modal-hint" id="edit-role-hint" style="display:none;">ไม่สามารถเปลี่ยนสิทธิ์ของตัวเองได้</div>
             </div>
+            <!-- ช่องกรอกรหัสผ่านใหม่ -->
             <div class="form-group">
                 <label class="group-label" for="edit-password">รหัสผ่านใหม่ (ไม่บังคับ)</label>
                 <input type="password" id="edit-password" placeholder="เว้นว่างถ้าไม่ต้องการเปลี่ยน" autocomplete="new-password">
                 <div class="modal-hint">อย่างน้อย 8 ตัวอักษร</div>
             </div>
+            <!-- ข้อความแจ้งเตือนเมื่อเกิดข้อผิดพลาดในการแก้ไข -->
             <p class="modal-error" id="edit-error"></p>
+            <!-- ปุ่มบันทึกและยกเลิก -->
             <div class="modal-buttons">
                 <button class="primary-btn" id="edit-save-btn">บันทึก</button>
                 <button class="secondary-btn" id="edit-cancel-btn">ยกเลิก</button>
@@ -85,6 +100,7 @@
         </div>
     </div>
 
+    <!-- ===== โหลดสคริปต์การทำงาน ===== -->
     <script src="config.js"></script>
     <script src="script.js"></script>
 </body>

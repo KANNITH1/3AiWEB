@@ -5,59 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>สมัครสมาชิก — Forge AI</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .auth-layout { display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; padding: 20px; background: var(--c-bg); }
-    .auth-card { width: 100%; max-width: 420px; text-align: center; }
-    .brand { margin-bottom: 10px; }
-    .brand h1 { font-size: 36px; font-weight: 700; color: var(--primary); }
-    .brand h1 span { color: #f97316; }
-    .auth-footer { margin-top: 25px; font-size: 14px; color: var(--c-text-mut); text-align: center; }
-    .auth-footer a { color: var(--primary); text-decoration: none; font-weight: 600; transition: 0.2s; }
-    .auth-footer a:hover { color: #ea580c; }
-  </style>
 </head>
 <body>
 
+  <!-- ===== กล่องฟอร์มสมัครสมาชิก ===== -->
   <div class="auth-layout">
     <div class="form-card auth-card">
+      <!-- โลโก้และชื่อระบบ -->
       <div class="brand">
           <h1>Forge <span>AI</span></h1>
       </div>
+      <!-- หัวข้อหน้าสมัครสมาชิก -->
       <h2 style="margin-bottom: 8px; font-size: 24px; font-weight: 600;">สมัครสมาชิก</h2>
       <p style="margin-bottom: 24px; color: var(--c-text-mut); font-size: 14px;">สร้างบัญชีใหม่เพื่อเริ่มใช้งาน</p>
 
+      <!-- ฟอร์มกรอกข้อมูลลงทะเบียน -->
       <form id="register-form" onsubmit="handleRegister(event)" style="text-align: left;">
+        <!-- ช่องกรอกชื่อผู้ใช้ -->
         <div class="form-group">
           <label for="username" class="group-label">ชื่อผู้ใช้ (Username)</label>
           <input type="text" id="username" placeholder="ชื่อของคุณ" required>
         </div>
 
+        <!-- ช่องกรอกอีเมล -->
         <div class="form-group">
           <label for="email" class="group-label">อีเมล (Email)</label>
           <input type="email" id="email" placeholder="your@email.com" required>
         </div>
 
+        <!-- ช่องกรอกรหัสผ่าน -->
         <div class="form-group">
           <label for="password" class="group-label">รหัสผ่าน (Password)</label>
           <input type="password" id="password" placeholder="••••••••" required>
         </div>
 
+        <!-- ปุ่มกดเพื่อลงทะเบียน -->
         <button type="submit" class="primary-btn" style="margin-top: 10px;">
           ลงทะเบียน
         </button>
       </form>
 
+      <!-- ลิงก์สลับไปหน้าเข้าสู่ระบบ -->
       <div class="auth-footer">
         มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">เข้าสู่ระบบ</a>
       </div>
     </div>
   </div>
 
+  <!-- ===== สคริปต์เชื่อมต่อ Backend สำหรับสมัครสมาชิก ===== -->
   <script src="config.js"></script>
   <script>
+    // ฟังก์ชันย่อสำหรับดึง Element ตาม id
     const $ = id => document.getElementById(id);
 
-    // สมัครสมาชิกผ่าน POST /api/register สำเร็จแล้วพากลับหน้า login
+    // ส่งข้อมูลสมัครสมาชิกไป Backend สำเร็จแล้วจะพาไปหน้าเข้าสู่ระบบ
     async function handleRegister(e) {
       e.preventDefault();
       const btn = e.target.querySelector('button[type="submit"]');
@@ -73,7 +74,7 @@
         alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
         window.location.href = 'index.html';
       } catch (err) {
-        // TypeError = fetch ล้มเหลว (เซิร์ฟเวอร์ปิดอยู่) นอกนั้นเป็นข้อความ error จาก Backend
+        // แจ้งเตือนข้อผิดพลาด (เช่น เซิร์ฟเวอร์ปิดอยู่ หรืออีเมลซ้ำ)
         alert(err instanceof TypeError ? 'ไม่สามารถเชื่อมต่อ Backend ได้ (server.py ปิดอยู่)' : err.message);
       } finally {
         btn.disabled = false;
