@@ -55,6 +55,9 @@
 
   <script src="config.js"></script>
   <script>
+    const $ = id => document.getElementById(id);
+
+    // สมัครสมาชิกผ่าน POST /api/register สำเร็จแล้วพากลับหน้า login
     async function handleRegister(e) {
       e.preventDefault();
       const btn = e.target.querySelector('button[type="submit"]');
@@ -63,17 +66,14 @@
         const res = await fetch(API_BASE + '/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: document.getElementById('username').value,
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value
-          })
+          body: JSON.stringify({ username: $('username').value, email: $('email').value, password: $('password').value })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'สมัครสมาชิกไม่สำเร็จ');
         alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
         window.location.href = 'index.html';
       } catch (err) {
+        // TypeError = fetch ล้มเหลว (เซิร์ฟเวอร์ปิดอยู่) นอกนั้นเป็นข้อความ error จาก Backend
         alert(err instanceof TypeError ? 'ไม่สามารถเชื่อมต่อ Backend ได้ (server.py ปิดอยู่)' : err.message);
       } finally {
         btn.disabled = false;
