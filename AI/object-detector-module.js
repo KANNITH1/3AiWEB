@@ -1,104 +1,82 @@
-// object-detector-module.js
-// -----------------------------------------------------------------
-// ไฟล์นี้ต้องถูกโหลดด้วย <script type="module"> เท่านั้น (ดู home.html)
-// ใช้ static import แบบเดียวกับโปรเจค detector.js เดิมของผู้ใช้ที่เคยรันได้จริง
-// เพื่อเลี่ยงปัญหา dynamic import() จาก classic script ที่บางเบราว์เซอร์/บาง
-// เครื่องจัดการได้ไม่เสถียร
-// -----------------------------------------------------------------
-
+// object-detector-module.js — ตรวจจับวัตถุด้วย MediaPipe ในเบราว์เซอร์ (ไม่ผ่าน Backend)
+// ต้องโหลดด้วย <script type="module"> เท่านั้น (home.html โหลดผ่าน /api/ai/object-detector-module.js)
+// ใช้ static import เพราะ dynamic import() จาก classic script ไม่เสถียรในบางเบราว์เซอร์
+// เปิดฟังก์ชัน window.runObjectDetection ให้ script.js เรียกใช้
 import { ObjectDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
-let objectDetector = null;
-let lastModel = null;
-let lastDelegate = null;
+const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm";
+const COLOR = "#06b6d4";
 
-async function ensureDetector(model, delegate, maxResults, threshold) {
-  const needsReinit = !objectDetector || model !== lastModel || delegate !== lastDelegate;
+// เก็บตัวตรวจจับไว้ใช้ซ้ำ (สร้างใหม่เฉพาะตอนเปลี่ยนโมเดลหรือ delegate)
+let detector = null;
+let current = { model: null, delegate: null };
 
-  if (needsReinit) {
-    if (objectDetector) {
-      try { objectDetector.close(); } catch (e) { /* ignore */ }
-      objectDetector = null; // กันค้างตัวเก่าที่ปิดไปแล้ว ถ้าสร้างตัวใหม่ไม่สำเร็จ
-    }
-
-    const modelUrl = `https://storage.googleapis.com/mediapipe-models/object_detector/${model}/float16/1/${model}.tflite`;
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-    );
-
-    objectDetector = await ObjectDetector.createFromOptions(vision, {
-      baseOptions: { modelAssetPath: modelUrl, delegate },
-      scoreThreshold: threshold,
-      maxResults,
-      runningMode: "IMAGE",
-    });
-
-    lastModel = model;
-    lastDelegate = delegate;
-  } else {
-    await objectDetector.setOptions({ scoreThreshold: threshold, maxResults });
+async function getDetector(model, delegate, maxResults, threshold) {
+  if (detector && current.model === model && current.delegate === delegate) {
+    await detector.setOptions({ scoreThreshold: threshold, maxResults });   // โมเดลเดิม แค่ปรับค่า
+    return detector;
   }
 
-  return objectDetector;
-}
-
-// วาดกรอบ + ป้ายชื่อวัตถุลงบนภาพต้นฉบับ (ที่ความละเอียดจริง) แล้วคืนเป็น data URL
-function drawDetectionsOnImage(imgEl, detections) {
-  const w = imgEl.naturalWidth || imgEl.width;
-  const h = imgEl.naturalHeight || imgEl.height;
-
-  const tmpCanvas = document.createElement("canvas");
-  tmpCanvas.width = w;
-  tmpCanvas.height = h;
-  const ctx = tmpCanvas.getContext("2d");
-  ctx.drawImage(imgEl, 0, 0, w, h);
-
-  (detections || []).forEach((detection) => {
-    const { originX, originY, width, height } = detection.boundingBox;
-    const category = detection.categories[0];
-    const labelText = `${category.categoryName} (${Math.round(category.score * 100)}%)`;
-
-    const lineWidth = Math.max(2, Math.round(w / 250));
-    const fontSize = Math.max(14, Math.round(w / 60));
-    const boxH = fontSize + 10;
-
-    ctx.strokeStyle = "#06b6d4";
-    ctx.lineWidth = lineWidth;
-    ctx.strokeRect(originX, originY, width, height);
-
-    ctx.font = `600 ${fontSize}px 'Prompt', sans-serif`;
-    const textW = ctx.measureText(labelText).width;
-
-    ctx.fillStyle = "#06b6d4";
-    ctx.fillRect(originX, originY, textW + 14, boxH);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(labelText, originX + 7, originY + boxH - 8);
+  if (detector) {
+    try { detector.close(); } catch (e) { /* ปิดไม่ได้ก็ข้ามไป */ }
+    detector = null;   // กันค้างตัวเก่าที่ปิดแล้ว ถ้าสร้างตัวใหม่ไม่สำเร็จ
+  }
+  const vision = await FilesetResolver.forVisionTasks(WASM_URL);
+  detector = await ObjectDetector.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/${model}/float16/1/${model}.tflite`,
+      delegate,
+    },
+    scoreThreshold: threshold,
+    maxResults,
+    runningMode: "IMAGE",
   });
-
-  return tmpCanvas.toDataURL("image/png");
+  current = { model, delegate };
+  return detector;
 }
 
-// เปิดให้ script.js (classic script) เรียกใช้งานผ่าน window ได้
-window.runObjectDetection = async function (imgEl, settings) {
-  const { model, delegate, maxResults, threshold } = settings;
-  const detector = await ensureDetector(model, delegate, maxResults, threshold);
-  const result = detector.detect(imgEl);
-  const detections = result.detections || [];
+// วาดกรอบ + ป้ายชื่อวัตถุลงบนภาพต้นฉบับ (ความละเอียดจริง) แล้วคืนเป็น data URL
+function drawDetections(img, detections) {
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  const canvas = Object.assign(document.createElement("canvas"), { width: w, height: h });
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, w, h);
 
-  // นับจำนวนวัตถุแยกตามชื่อ เช่น { person: 2, dog: 1 } ให้ script.js แสดงผลสรุป
+  const fontSize = Math.max(14, Math.round(w / 60));
+  const labelH = fontSize + 10;
+  ctx.lineWidth = Math.max(2, Math.round(w / 250));
+  ctx.font = `600 ${fontSize}px 'Prompt', sans-serif`;
+
+  for (const { boundingBox: box, categories: [top] } of detections) {
+    const label = `${top.categoryName} (${Math.round(top.score * 100)}%)`;
+
+    ctx.strokeStyle = COLOR;
+    ctx.strokeRect(box.originX, box.originY, box.width, box.height);          // กรอบวัตถุ
+    ctx.fillStyle = COLOR;
+    ctx.fillRect(box.originX, box.originY, ctx.measureText(label).width + 14, labelH);   // พื้นป้ายชื่อ
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(label, box.originX + 7, box.originY + labelH - 8);           // ข้อความ
+  }
+  return canvas.toDataURL("image/png");
+}
+
+/**
+ * ตรวจจับวัตถุในภาพ <img>
+ * settings = { model, delegate: "GPU"|"CPU", maxResults, threshold }
+ * คืน { dataUrl: ภาพที่วาดกรอบแล้ว, count: จำนวนวัตถุ, objects: { ชื่อ: จำนวน } }
+ */
+window.runObjectDetection = async (img, { model, delegate, maxResults, threshold }) => {
+  const instance = await getDetector(model, delegate, maxResults, threshold);
+  const detections = instance.detect(img).detections || [];
+
   const objects = {};
-  detections.forEach((d) => {
+  for (const d of detections) {
     const name = d.categories[0].categoryName;
     objects[name] = (objects[name] || 0) + 1;
-  });
-
-  return {
-    dataUrl: drawDetectionsOnImage(imgEl, detections),
-    count: detections.length,
-    objects,
-  };
+  }
+  return { dataUrl: drawDetections(img, detections), count: detections.length, objects };
 };
 
-// บอก script.js ว่าโมดูลนี้พร้อมใช้งานแล้ว (เผื่อกดปุ่มเร็วเกินไปก่อนโมดูลโหลดเสร็จ)
+// บอก script.js ว่าโมดูลพร้อมใช้งานแล้ว
 window.__objectDetectorModuleReady = true;
