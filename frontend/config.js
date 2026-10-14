@@ -2,4 +2,4 @@
 // โหลดก่อน script.js ในทุกหน้า เพื่อระบุ URL ปลายทางของ Backend (server.py)
 // - ถ้าเปิดผ่าน Nginx ให้เปลี่ยนเป็นค่าว่าง ''
 // - ถ้าเปิดตรงหรือผ่าน Live Server ให้ระบุ IP และพอร์ตของเซิร์ฟเวอร์ Backend
-const API_BASE = 'http://10.192.0.212:5000';
+const API_BASE = 'http://10.192.0.212:5000'; // URL ของเครื่องเซิร์ฟเวอร์ Backend (server.py) ที่ให้บริการ API
