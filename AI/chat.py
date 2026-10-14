@@ -150,7 +150,7 @@ def forge_image(endpoint, payload, seed):  # เรียก Forge แล้ว�
         used_seed = json.loads(result.get("info", "{}")).get("seed", seed)  # แปลง JSON ใน info เพื่อเอาค่า "seed" (ถ้าไม่มีใช้ seed ที่ส่งมา)
     except Exception:  # ถ้าแปลงไม่ได้
         used_seed = seed  # ใช้ seed เดิม
-    return jsonify({"image_url": png_url(result["images"][0]), "seed": used_seed})  # ส่งกลับ {image_url, seed}  🔗 → ไหลผ่าน server.py ไปที่ script.js showResult() ใช้ data.image_url และ data.seed
+    return jsonify({"image_url": png_url(result["images"][0]), "seed": used_seed})  # ส่งกลับ T17 {image_url, seed}  🔗 → ไหลผ่าน server.py ไปที่ script.js showResult() ใช้ data.image_url และ data.seed
 
 
 # ================= แต่ละโหมด (รับ dict ที่แปลงจาก JSON แล้ว) =================
@@ -220,7 +220,7 @@ MODES = {"text2img": text2img, "img2img": img2img, "blur": blur, "canny": canny}
 # ================= เส้นทาง =================
 #02
 #T2. #I9 ส่งข้อมูลที่ JavaScript ส่งมา เช่น Prompt, Seed และ Model มาให้ Pytho
-#B8 C6 T8
+#B8 C6 T9
 def body():  # ฟังก์ชันดึง JSON body จากคำขอที่ส่งเข้ามา
     return request.get_json(silent=True) or {}  # get_json(silent=True) คืน None ถ้าไม่ใช่ JSON -> or {} ป้องกัน None
 
@@ -248,7 +248,7 @@ def get_models():  # ขอรายชื่อโมเดลจาก Forge N
         return bad(str(e), 500)  # คืน error 500
 
 #01
-#T9. #I8 เลือกโหมด Text2Img, Img2Img, Blur, Canny
+#T8. #I8 เลือกโหมด Text2Img, Img2Img, Blur, Canny
 @app.route("/api/generate", methods=["POST"])  # Route รวมสำหรับรับคำขอสร้างภาพทุกโหมด
 def generate():  # ฟังก์ชันจัดการการสร้างภาพตาม mode
     """ทุกโหมดยิงมาที่นี่พร้อมฟิลด์ mode (ค่าเริ่มต้น text2img)"""
